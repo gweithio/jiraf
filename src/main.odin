@@ -8,7 +8,7 @@ import "core:encoding/json"
 
 // Parse values from the args so we have a map[string]string
 get_value_after_slash :: proc(v: string) -> map[string]string {
-	argsMap := make(map[string]string)
+	args_map := make(map[string]string)
 
 	index := strings.index(v, ":")
 
@@ -16,21 +16,21 @@ get_value_after_slash :: proc(v: string) -> map[string]string {
 	v2, _ := strings.remove_all(v1, "-")
 
 	if index != -1 {
-		argsMap[v2[:index - 1]] = v2[index - 1:]
+		args_map[v2[:index - 1]] = v2[index - 1:]
 	}
 
-	return argsMap
+	return args_map
 }
 
 // loop through the args and append them to our map
 parse_args :: proc(args: []string) -> [dynamic]map[string]string {
-	parsedArgs := [dynamic]map[string]string{}
+	parsed_map := [dynamic]map[string]string{}
 
 	for arg in args {
-		append_elem(&parsedArgs, get_value_after_slash(arg))
+		append_elem(&parsed_map, get_value_after_slash(arg))
 	}
 
-	return parsedArgs
+	return parsed_map
 }
 
 // run the project by calling odin run
@@ -84,13 +84,13 @@ get_project_from_json :: proc() -> map[string]string {
 	project_data := json_data.(json.Object)
 
 	// TODO(ethan): this is somewhat trash, needs to be improved, a loop maybe useful!
-	projectMap := make(map[string]string)
-	projectMap["name"] = project_data["name"].(json.String)
-	projectMap["type"] = project_data["type"].(json.String)
-	projectMap["author"] = project_data["author"].(json.String)
-	projectMap["version"] = project_data["version"].(json.String)
+	project_map := make(map[string]string)
+	project_map["name"] = project_data["name"].(json.String)
+	project_map["type"] = project_data["type"].(json.String)
+	project_map["author"] = project_data["author"].(json.String)
+	project_map["version"] = project_data["version"].(json.String)
 
-	return projectMap
+	return project_map
 }
 
 main :: proc() {
@@ -98,66 +98,63 @@ main :: proc() {
 	args := os.args[1:]
 
 	if is_a_command(args[0]) {
-		projectJson := get_project_from_json()
+		project_json := get_project_from_json()
 
 		// Get all args other than the current filename
 		switch (args[0]) {
 		case "run":
 			does_package_exist()
-			run_project(projectJson)
+			run_project(project_json)
 			os.exit(1)
 		case "build":
 			does_package_exist()
-			build_project(projectJson)
+			build_project(project_json)
 			os.exit(1)
 
 		case "test":
 			does_package_exist()
-			run_tests(projectJson)
+			run_tests(project_json)
 			os.exit(1)
 		}
 
 		return
 	}
 
-	parsedArgs := parse_args(args)
-	parsedMap := make(map[string]string)
+	parsed_args := parse_args(args)
+	parsed_map := make(map[string]string)
 
-	for m, _ in parsedArgs {
+	for m, _ in parsed_args {
 		for k, v in m {
-			parsedMap[k] = v
+			parsed_map[k] = v
 		}
 	}
 
 	// strip whitespace from the name
-	newName, _ := strings.remove_all(parsedMap["name"], " ")
+	new_name, _ := strings.remove_all(parsed_map["name"], " ")
 
-	if parsedMap["name"] == "" && !is_a_command(args[0]) {
+	if parsed_map["name"] == "" && !is_a_command(args[0]) {
 		fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)
 		return
 	}
 
-	if parsedMap["type"] == "" && !is_a_command(args[0]) {
+	if parsed_map["type"] == "" && !is_a_command(args[0]) {
 		fmt.eprintln(`Provide a project type, like -type:exe for an executable project or -type:lib for a library`)
 		return
 	}
 
 
-	depMap := make(map[string]string)
-	depMap["package_name"] = "package_url"
-
 	// create our project
-	newProject, ok := jiraf.project_create(
-		name = strings.to_lower(newName),
-		type = parsedMap["type"],
-		author = parsedMap["author"],
-		version = parsedMap["version"],
-		description = parsedMap["desc"],
+	new_project, ok := jiraf.project_create(
+		name = strings.to_lower(new_name),
+		type = parsed_map["type"],
+		author = parsed_map["author"],
+		version = parsed_map["version"],
+		description = parsed_map["desc"],
 		dependencies = make(map[string]string),
 	)
 
 	if ok {
-		fmt.println(strings.concatenate([]string{newProject.name, " has been created"}))
+		fmt.println(strings.concatenate([]string{new_project.name, " has been created"}))
 		return
 	}
 
