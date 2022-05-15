@@ -5,10 +5,6 @@ import "core:os"
 import "core:strings"
 import "shared:jiraf"
 
-DEFAULT_AUTHOR :: "TODO: PROJECT AUTHOR"
-DEFAULT_VERSION :: "TODO: PROJECT VERSION"
-DEFAULT_DESC :: "TODO: PROJECT NAME"
-
 get_value_after_slash :: proc(v: string) -> map[string]string {
 	argsMap := make(map[string]string)
 
@@ -34,6 +30,7 @@ parse_args :: proc(args: []string) -> [dynamic]map[string]string {
 	return parsedArgs
 }
 
+
 main :: proc() {
 	// Get all args other than the current filename
 	args := os.args[1:]
@@ -49,6 +46,18 @@ main :: proc() {
 
 	// strip whitespace from the name
 	newName, _ := strings.remove_all(parsedMap["name"], " ")
+
+	if parsedMap["name"] == "" {
+		fmt.println(`Provide a name for your project, like -name:"My Cool Project"`)
+		os.exit(1)
+	}
+
+	if parsedMap["type"] == "" {
+		fmt.println(`Provide a project type, like -type:exe for an executable project or -type:lib for a library`)
+		os.exit(
+			1,
+		)
+	}
 
 	// create our project
 	newProject, ok := jiraf.project_create(

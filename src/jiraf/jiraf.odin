@@ -5,6 +5,11 @@ import "core:os"
 import "core:strings"
 import "core:encoding/json"
 
+DEFAULT_AUTHOR :: "TODO: PROJECT AUTHOR"
+DEFAULT_VERSION :: "TODO: PROJECT VERSION"
+DEFAULT_DESC :: "TODO: PROJECT DESCRIPTION"
+
+
 Project :: struct {
 	name:         string,
 	type:         string,
@@ -27,7 +32,7 @@ project_create_json :: proc(using self: Project) -> bool {
 
 @(private)
 project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
-	// TODO(ethan): create json project file, src, tests and vendor directories
+	// TODO(ethan): create directories, like src, vendor, tests 
 
 	projectJson := project_create_json(self)
 
@@ -46,12 +51,21 @@ project_create :: proc(
 	dir: string,
 	ok: bool,
 ) {
+	// TODO(ethan): figure out a better way to handle this
+	newAuthor := author
+	newVersion := version
+	newDesc := description
+
+	if author == "" do newAuthor = DEFAULT_AUTHOR
+	if version == "" do newVersion = DEFAULT_VERSION
+	if description == "" do newDesc = DEFAULT_DESC
+
 	project := Project {
 		name         = name,
 		type         = type,
-		author       = author,
-		version      = version,
-		description  = description,
+		author       = newAuthor,
+		version      = newVersion,
+		description  = newDesc,
 		dependencies = dependencies,
 	}
 
