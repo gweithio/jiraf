@@ -1,0 +1,4 @@
+*.bin
+.vscode
+.bin
+tests/.bin
