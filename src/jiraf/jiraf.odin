@@ -32,27 +32,26 @@ project_create_json :: proc(using self: Project) -> bool {
 
 @(private)
 project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
-	mainOdinContent := strings.concatenate(
-		[]string{
-			`package main`,
-			`import "core:fmt"`,
-			`main :: proc() {`,
-			`fmt.println("Hellope")`,
-			`}`,
-		},
-	)
+	mainOdinContent := `
+    package main
+    
+    import "core:fmt"
+
+    main :: proc() {
+        fmt.println("Hellope!")
+    }
+    `
 
 	packageOdinContent := strings.concatenate([]string{"package ", self.name})
 
-	testOdinContent := strings.concatenate(
-		[]string{
-			`import "core:testing"`,
-			`@(test)`,
-			`test_true_is_true :: proc(t: ^testing.T) {`,
-			`testing.expect_value(t, true, true)`,
-			`}`,
-		},
-	)
+	testOdinContent := `
+    import "core:testing"
+
+    @(test)
+    test_true_is_true :: proc(t: ^testing.T) {
+        testing.expect_value(t, true, true)
+    }
+    `
 
 	testOdinContent = strings.concatenate([]string{
 			"package ",
@@ -83,7 +82,7 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 
 	createVendorDir := os.make_directory("vendor")
 	projectJson := project_create_json(self)
-	gitKeep := os.write_entire_file("vendor/.gitkeep", []byte{})
+	gitIgnore := os.write_entire_file("vendor/.gitIgnore", []byte{})
 
 	return strings.concatenate([]string{self.name, ".json"}), projectJson
 }
