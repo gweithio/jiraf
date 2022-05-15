@@ -130,7 +130,7 @@ main :: proc() {
 	}
 
 	// strip whitespace from the name
-	new_name, _ := strings.remove_all(parsed_map["name"], " ")
+	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
 
 	if parsed_map["name"] == "" && !is_a_command(args[0]) {
 		fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)

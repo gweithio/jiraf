@@ -1,1 +1,8 @@
-{"name": "exampleproject", "type": "exe", "author": "TODO: PROJECT AUTHOR", "version": "TODO: PROJECT VERSION", "description": "TODO: PROJECT DESCRIPTION", "dependencies": {}}
+{
+    "name": "example_project", 
+    "type": "exe", 
+    "author": "TODO: PROJECT AUTHOR", 
+    "version": "TODO: PROJECT VERSION", 
+    "description": "TODO: PROJECT DESCRIPTION", 
+    "dependencies": {}
+}
