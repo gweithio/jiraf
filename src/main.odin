@@ -6,6 +6,7 @@ import "core:strings"
 import "shared:jiraf"
 import "core:encoding/json"
 
+// Parse values from the args so we have a map[string]string
 get_value_after_slash :: proc(v: string) -> map[string]string {
 	argsMap := make(map[string]string)
 
@@ -21,6 +22,7 @@ get_value_after_slash :: proc(v: string) -> map[string]string {
 	return argsMap
 }
 
+// loop through the args and append them to our map
 parse_args :: proc(args: []string) -> [dynamic]map[string]string {
 	parsedArgs := [dynamic]map[string]string{}
 
@@ -31,20 +33,23 @@ parse_args :: proc(args: []string) -> [dynamic]map[string]string {
 	return parsedArgs
 }
 
+// run the project by calling odin run
 run_project :: proc(project: map[string]string) {
 	fmt.println(strings.concatenate([]string{"Running ", project["name"], "..."}))
 
 	// TODO(gweithio): run the project by calling
-	// odin run src/main.odin -file -collection:shared=src
+	// odin run src/main.odin -file -collection:shared=src -collection:vendor=vendor
 }
 
+// build the project by calling odin build
 build_project :: proc(project: map[string]string) {
 	fmt.println(strings.concatenate([]string{"Building ", project["name"], "..."}))
 
 	// TODO(gweithio): run the project by calling
-	// 	odin build src -o:speed -out:jiraf -collection:shared=src
+	// odin build src -o:speed -out:jiraf -collection:shared=src -collection:vendor=vendor
 }
 
+// Run tests by calling odin test
 run_tests :: proc(project: map[string]string) {
 	fmt.println("Running Tests...")
 
@@ -52,6 +57,7 @@ run_tests :: proc(project: map[string]string) {
 	// odin test tests -warnings-as-errors -show-timings -collection:shared=src
 }
 
+// Check if project.json exists, used for whether we can do the run, build or test commands
 does_package_exist :: proc() {
 	// TODO(gweithio): this doesn't really check if it exists
 	if !os.is_file("project.json") {
@@ -60,6 +66,7 @@ does_package_exist :: proc() {
 	}
 }
 
+// Check if the given parameter is a command
 is_a_command :: proc(cmd: string) -> bool {
 	if cmd == "run" || cmd == "test" || cmd == "build" {
 		return true
@@ -67,6 +74,7 @@ is_a_command :: proc(cmd: string) -> bool {
 	return false
 }
 
+// Get the project.json and stuff it into a map[string]string
 get_project_from_json :: proc() -> map[string]string {
 	file, err := os.read_entire_file_from_filename("project.json")
 	defer delete(file)
@@ -158,4 +166,3 @@ main :: proc() {
 	}
 
 }
-

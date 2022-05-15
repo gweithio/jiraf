@@ -17,6 +17,7 @@ Project :: struct {
 	dependencies: map[string]string,
 }
 
+// create our project.json
 @(private)
 project_create_json :: proc(using self: Project) -> bool {
 	newData, err := json.marshal(self)
@@ -28,6 +29,7 @@ project_create_json :: proc(using self: Project) -> bool {
 	return os.write_entire_file("project.json", newData)
 }
 
+// create our directories, such as src, test, vendor, including any neccessary .odin files
 @(private)
 project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 	mainOdinContent := `
