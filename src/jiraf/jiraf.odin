@@ -81,7 +81,7 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 
 	createVendorDir := os.make_directory("vendor")
 	projectJson := project_create_json(self)
-	gitIgnore := os.write_entire_file("vendor/.gitignore", []byte{})
+	gitKeep := os.write_entire_file("vendor/.gitkeep", []byte{})
 
 	return "package.json", projectJson
 }
