@@ -1,6 +1,7 @@
 # Jiraf
 A basic project builder for Odin
 
+See [article on Jiraf](https://www.epmor.app/posts/introducing-jiraf) for some background information
 
 ## Usage
 
