@@ -32,8 +32,55 @@ project_create_json :: proc(using self: Project) -> bool {
 
 @(private)
 project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
-	// TODO(ethan): create directories, like src, vendor, tests 
+	mainOdinContent := `
+    package main
+    
+    import "core:fmt"
 
+    main :: proc() {
+        fmt.println("Hellope!")
+    }
+    `
+
+	packageOdinContent := strings.concatenate([]string{"package ", self.name})
+
+	testOdinContent := `
+    import "core:testing"
+
+    @(test)
+    test_true_is_true :: proc(t: ^testing.T) {
+        testing.expect_value(t, true, true)
+    }
+    `
+
+	testOdinContent = strings.concatenate([]string{
+			"package ",
+			self.name,
+			"_test",
+			testOdinContent,
+		})
+
+	createSrcDir := os.make_directory("src")
+
+	SrcPackageDirStr := strings.concatenate([]string{"src/", self.name})
+	createSrcPackageDir := os.make_directory(SrcPackageDirStr)
+
+	mainFile := os.write_entire_file("src/main.odin", transmute([]byte)mainOdinContent, true)
+	packageFile := os.write_entire_file(
+		strings.concatenate([]string{SrcPackageDirStr, "/", self.name, ".odin"}),
+		transmute([]byte)packageOdinContent,
+		true,
+	)
+
+	createTestsDir := os.make_directory("tests")
+
+	testFile := os.write_entire_file(
+		strings.concatenate([]string{"tests/", self.name, "_test", ".odin"}),
+		transmute([]byte)testOdinContent,
+		true,
+	)
+
+	createVendorDir := os.make_directory("vendor")
 	projectJson := project_create_json(self)
 
 	return strings.concatenate([]string{self.name, ".json"}), projectJson

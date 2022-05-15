@@ -9,8 +9,11 @@
             "path": "/Users/gweithio/git/jiraf/src"
         }
     ],
+    "enable_snippets": true,
+    "thread_pool_count": 4,
     "enable_document_symbols": true,
-    "enable_semantic_tokens": true,
+    "enable_semantic_tokens": false,
     "enable_hover": true,
-    "enable_snippets": true
+    "enable_global_std": true,
+    "verbose": true
 }
