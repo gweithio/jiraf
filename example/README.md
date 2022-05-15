@@ -3,13 +3,12 @@ Calling the following command
 $ jiraf -name:"ExampleProject" -type:exe
 ```
 
-
 generated the following directories and files
 
-examplerproject.json
+exampleproject.json
 
 ## Source Directory
-+ src/exampleproject/examplerproject.odin
++ src/exampleproject/exampleproject.odin
 + src/main.odin
 
 ## Test Directory
