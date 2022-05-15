@@ -1,4 +1,4 @@
-package ExampleProject_test
+package exampleproject_test
     import "core:testing"
 
     @(test)

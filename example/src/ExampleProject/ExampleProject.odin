@@ -1,1 +1,1 @@
-package ExampleProject
+package exampleproject

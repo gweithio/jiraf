@@ -42,7 +42,9 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
     }
     `
 
-	packageOdinContent := strings.concatenate([]string{"package ", self.name})
+	packageOdinContent := strings.concatenate(
+		[]string{"package ", strings.to_lower(self.name)},
+	)
 
 	testOdinContent := `
     import "core:testing"
@@ -55,7 +57,7 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 
 	testOdinContent = strings.concatenate([]string{
 			"package ",
-			self.name,
+			strings.to_lower(self.name),
 			"_test",
 			testOdinContent,
 		})
@@ -82,6 +84,7 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 
 	createVendorDir := os.make_directory("vendor")
 	projectJson := project_create_json(self)
+	gitKeep := os.write_entire_file("vendor/.gitkeep", []byte{})
 
 	return strings.concatenate([]string{self.name, ".json"}), projectJson
 }
