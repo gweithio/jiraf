@@ -5,7 +5,7 @@ $ jiraf -name:"ExampleProject" -type:exe
 
 generated the following directories and files
 
-exampleproject.json
+project.json
 
 ## Source Directory
 + src/exampleproject/exampleproject.odin
