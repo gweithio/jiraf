@@ -42,9 +42,7 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
     }
     `
 
-	packageOdinContent := strings.concatenate(
-		[]string{"package ", strings.to_lower(self.name)},
-	)
+	packageOdinContent := strings.concatenate([]string{"package ", self.name})
 
 	testOdinContent := `
     import "core:testing"
@@ -57,7 +55,7 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 
 	testOdinContent = strings.concatenate([]string{
 			"package ",
-			strings.to_lower(self.name),
+			self.name,
 			"_test",
 			testOdinContent,
 		})

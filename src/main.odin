@@ -61,7 +61,7 @@ main :: proc() {
 
 	// create our project
 	newProject, ok := jiraf.project_create(
-		name = newName,
+		name = strings.to_lower(newName),
 		type = parsedMap["type"],
 		author = parsedMap["author"],
 		version = parsedMap["version"],
