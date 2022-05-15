@@ -93,9 +93,34 @@ get_project_from_json :: proc() -> map[string]string {
 	return project_map
 }
 
+print_help :: proc() {
+
+	fmt.println()
+	fmt.println(`usage: jiraf -name:"project name" -type:exe`)
+
+	fmt.print(`
+    -name:"project name" - [required] The name of the package
+    `)
+	fmt.print(`
+    -type:exe - [required] The project type, exe or lib
+    `)
+
+	fmt.print(`
+    -author:"author name" - [optional] The author of the project
+    `)
+	fmt.println(`
+    -version:"0.1" - [optional] The initial project version
+    `)
+}
+
 main :: proc() {
 
 	args := os.args[1:]
+
+	if len(args) <= 0 || args[0] == "-help" || args[0] == "-h" || args[0] == "help" {
+		print_help()
+		return
+	}
 
 	if is_a_command(args[0]) {
 		project_json := get_project_from_json()
@@ -105,16 +130,15 @@ main :: proc() {
 		case "run":
 			does_package_exist()
 			run_project(project_json)
-			os.exit(1)
+			return
 		case "build":
 			does_package_exist()
 			build_project(project_json)
-			os.exit(1)
-
+			return
 		case "test":
 			does_package_exist()
 			run_tests(project_json)
-			os.exit(1)
+			return
 		}
 
 		return
