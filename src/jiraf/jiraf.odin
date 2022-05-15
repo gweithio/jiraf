@@ -1,6 +1,5 @@
 package jiraf
 
-import "core:fmt"
 import "core:os"
 import "core:strings"
 import "core:encoding/json"
@@ -9,14 +8,13 @@ DEFAULT_AUTHOR :: "TODO: PROJECT AUTHOR"
 DEFAULT_VERSION :: "TODO: PROJECT VERSION"
 DEFAULT_DESC :: "TODO: PROJECT DESCRIPTION"
 
-
 Project :: struct {
 	name:         string,
 	type:         string,
 	author:       string,
 	version:      string,
 	description:  string,
-	dependencies: []string,
+	dependencies: map[string]string,
 }
 
 @(private)
@@ -27,7 +25,7 @@ project_create_json :: proc(using self: Project) -> bool {
 		return false
 	}
 
-	return os.write_entire_file(strings.concatenate([]string{self.name, ".json"}), newData)
+	return os.write_entire_file("project.json", newData)
 }
 
 @(private)
@@ -66,6 +64,7 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 	createSrcPackageDir := os.make_directory(SrcPackageDirStr)
 
 	mainFile := os.write_entire_file("src/main.odin", transmute([]byte)mainOdinContent, true)
+
 	packageFile := os.write_entire_file(
 		strings.concatenate([]string{SrcPackageDirStr, "/", self.name, ".odin"}),
 		transmute([]byte)packageOdinContent,
@@ -82,9 +81,9 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 
 	createVendorDir := os.make_directory("vendor")
 	projectJson := project_create_json(self)
-	gitIgnore := os.write_entire_file("vendor/.gitIgnore", []byte{})
+	gitIgnore := os.write_entire_file("vendor/.gitignore", []byte{})
 
-	return strings.concatenate([]string{self.name, ".json"}), projectJson
+	return "package.json", projectJson
 }
 
 // Create our project
@@ -94,9 +93,9 @@ project_create :: proc(
 	author,
 	version,
 	description: string,
-	dependencies: []string,
+	dependencies: map[string]string,
 ) -> (
-	dir: string,
+	proj: Project,
 	ok: bool,
 ) {
 	// TODO(ethan): figure out a better way to handle this
@@ -117,5 +116,7 @@ project_create :: proc(
 		dependencies = dependencies,
 	}
 
-	return project_create_dirs(project)
+	_, result := project_create_dirs(project)
+
+	return project, result
 }

@@ -4,6 +4,7 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 import "shared:jiraf"
+import "core:encoding/json"
 
 get_value_after_slash :: proc(v: string) -> map[string]string {
 	argsMap := make(map[string]string)
@@ -30,10 +31,86 @@ parse_args :: proc(args: []string) -> [dynamic]map[string]string {
 	return parsedArgs
 }
 
+run_project :: proc(project: map[string]string) {
+	fmt.println(strings.concatenate([]string{"Running ", project["name"], "..."}))
+
+	// TODO(gweithio): run the project by calling
+	// odin run src/main.odin -file -collection:shared=src
+}
+
+build_project :: proc(project: map[string]string) {
+	fmt.println(strings.concatenate([]string{"Building ", project["name"], "..."}))
+
+	// TODO(gweithio): run the project by calling
+	// 	odin build src -o:speed -out:jiraf -collection:shared=src
+}
+
+run_tests :: proc(project: map[string]string) {
+	fmt.println("Running Tests...")
+
+	// TODO(gweithio): run the project by calling
+	// odin test tests -warnings-as-errors -show-timings -collection:shared=src
+}
+
+does_package_exist :: proc() {
+	// TODO(gweithio): this doesn't really check if it exists
+	if !os.is_file("project.json") {
+		fmt.println("Please create a project first")
+		return
+	}
+}
+
+is_a_command :: proc(cmd: string) -> bool {
+	if cmd == "run" || cmd == "test" || cmd == "build" {
+		return true
+	}
+	return false
+}
+
+get_project_from_json :: proc() -> map[string]string {
+	file, err := os.read_entire_file_from_filename("project.json")
+	defer delete(file)
+
+	json_data, _ := json.parse(file)
+
+	project_data := json_data.(json.Object)
+
+	// TODO(ethan): this is somewhat trash, needs to be improved, a loop maybe useful!
+	projectMap := make(map[string]string)
+	projectMap["name"] = project_data["name"].(json.String)
+	projectMap["type"] = project_data["type"].(json.String)
+	projectMap["author"] = project_data["author"].(json.String)
+	projectMap["version"] = project_data["version"].(json.String)
+
+	return projectMap
+}
 
 main :: proc() {
-	// Get all args other than the current filename
+
 	args := os.args[1:]
+
+	if is_a_command(args[0]) {
+		projectJson := get_project_from_json()
+
+		// Get all args other than the current filename
+		switch (args[0]) {
+		case "run":
+			does_package_exist()
+			run_project(projectJson)
+			os.exit(1)
+		case "build":
+			does_package_exist()
+			build_project(projectJson)
+			os.exit(1)
+
+		case "test":
+			does_package_exist()
+			run_tests(projectJson)
+			os.exit(1)
+		}
+
+		return
+	}
 
 	parsedArgs := parse_args(args)
 	parsedMap := make(map[string]string)
@@ -47,17 +124,19 @@ main :: proc() {
 	// strip whitespace from the name
 	newName, _ := strings.remove_all(parsedMap["name"], " ")
 
-	if parsedMap["name"] == "" {
-		fmt.println(`Provide a name for your project, like -name:"My Cool Project"`)
-		os.exit(1)
+	if parsedMap["name"] == "" && !is_a_command(args[0]) {
+		fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)
+		return
 	}
 
-	if parsedMap["type"] == "" {
-		fmt.println(`Provide a project type, like -type:exe for an executable project or -type:lib for a library`)
-		os.exit(
-			1,
-		)
+	if parsedMap["type"] == "" && !is_a_command(args[0]) {
+		fmt.eprintln(`Provide a project type, like -type:exe for an executable project or -type:lib for a library`)
+		return
 	}
+
+
+	depMap := make(map[string]string)
+	depMap["package_name"] = "package_url"
 
 	// create our project
 	newProject, ok := jiraf.project_create(
@@ -66,13 +145,17 @@ main :: proc() {
 		author = parsedMap["author"],
 		version = parsedMap["version"],
 		description = parsedMap["desc"],
-		dependencies = []string{},
+		dependencies = make(map[string]string),
 	)
 
-	if !ok {
-		panic("Failed to create project")
+	if ok {
+		fmt.println(strings.concatenate([]string{newProject.name, " has been created"}))
+		return
 	}
 
-	fmt.println(newProject)
+	if !ok {
+		fmt.eprintln("Failed to create project")
+	}
 
 }
+

@@ -8,7 +8,7 @@ test:
 	odin test tests -warnings-as-errors -show-timings -collection:shared=src
 
 build: 
-	odin build src -o:speed -out:jiraf -collection:shared=../src
+	odin build src -o:speed -out:jiraf -collection:shared=src
 
 clean:
 	rm tests/.bin

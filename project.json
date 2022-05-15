@@ -1,0 +1,8 @@
+{
+    "name": "Jiraf", 
+    "type": "exe", 
+    "author": "Ethan Morgan <ethan@pmor.app>", 
+    "version": "0.2", 
+    "description": "A basic project builder for odin", 
+    "dependencies": {}
+}
