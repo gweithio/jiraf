@@ -7,7 +7,6 @@ add_dep :: proc(dep_name: string) -> bool {
 
 // Delete dep from the project.json
 delete_dep :: proc(dep_name: string) -> bool {
-
 	return false
 }
 

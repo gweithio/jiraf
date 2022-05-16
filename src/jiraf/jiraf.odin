@@ -3,6 +3,7 @@ package jiraf
 import "core:os"
 import "core:strings"
 import "core:encoding/json"
+import "shared:jiraf/utils"
 
 DEFAULT_AUTHOR :: "TODO: PROJECT AUTHOR"
 DEFAULT_VERSION :: "TODO: PROJECT VERSION"
@@ -32,6 +33,9 @@ project_create_json :: proc(using self: Project) -> bool {
 // create our directories, such as src, test, vendor, including any neccessary .odin files
 @(private)
 project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
+
+	results := [dynamic]bool{}
+
 	main_odin_content := `
     package main
     
@@ -62,8 +66,16 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 
 	create_src_dir := os.make_directory("src")
 
+	if create_src_dir == os.ERROR_NONE {
+		append(&results, true)
+	}
+
 	src_package_dir_str := strings.concatenate([]string{"src/", self.name})
 	create_src_package_dir := os.make_directory(src_package_dir_str)
+
+	if create_src_package_dir == os.ERROR_NONE {
+		append(&results, true)
+	}
 
 	main_file := os.write_entire_file(
 		"src/main.odin",
@@ -71,13 +83,21 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 		true,
 	)
 
+	append(&results, main_file)
+
 	package_file := os.write_entire_file(
 		strings.concatenate([]string{src_package_dir_str, "/", self.name, ".odin"}),
 		transmute([]byte)package_odin_content,
 		true,
 	)
 
+	append(&results, package_file)
+
 	create_tests_dir := os.make_directory("tests")
+
+	if create_tests_dir == os.ERROR_NONE {
+		append(&results, true)
+	}
 
 	test_file := os.write_entire_file(
 		strings.concatenate([]string{"tests/", self.name, "_test", ".odin"}),
@@ -85,11 +105,26 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 		true,
 	)
 
+	append(&results, test_file)
+
 	create_vendor_dir := os.make_directory("vendor")
+
+	if create_vendor_dir == os.ERROR_NONE {
+		append(&results, true)
+	}
+
 	project_json := project_create_json(self)
+	append(&results, project_json)
+
+
 	git_keep := os.write_entire_file("vendor/.gitkeep", []byte{})
 
-	return "package.json", project_json
+	append(&results, git_keep)
+
+	result := utils.all_true(results)
+
+	// just return package.json as it will always be that name
+	return "package.json", result
 }
 
 // Create our project

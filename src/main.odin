@@ -53,10 +53,7 @@ run_project :: proc(project: map[string]string) {
 build_project :: proc(project: map[string]string) {
 
 	// Don't really need the command_builder
-	command_builder := &strings.Builder{}
-
-	build_command := fmt.sbprintf(
-		command_builder,
+	build_command := fmt.tprintf(
 		"odin build src -o:speed -out:%s -warnings-as-errors -collection:shared=src -collection:vendor=vendor",
 		strings.to_lower(project["name"]),
 	)
@@ -69,11 +66,7 @@ build_project :: proc(project: map[string]string) {
 // Run tests by calling odin test
 run_tests :: proc(project: map[string]string) {
 
-	// Don't really need the command_builder
-	command_builder := &strings.Builder{}
-
-	test_command := fmt.sbprintf(
-		command_builder,
+	test_command := fmt.tprintf(
 		"odin test tests -warnings-as-errors -show-timings -collection:shared=src -collection:vendor=vendor",
 		strings.to_lower(project["name"]),
 	)
