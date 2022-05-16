@@ -68,6 +68,8 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	if create_src_dir == os.ERROR_NONE {
 		append(&results, true)
+	} else {
+		append(&results, false)
 	}
 
 	src_package_dir_str := strings.concatenate([]string{"src/", self.name})
@@ -75,6 +77,9 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	if create_src_package_dir == os.ERROR_NONE {
 		append(&results, true)
+	} else {
+		append(&results, false)
+
 	}
 
 	main_file := os.write_entire_file(
@@ -97,6 +102,8 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	if create_tests_dir == os.ERROR_NONE {
 		append(&results, true)
+	} else {
+		append(&results, false)
 	}
 
 	test_file := os.write_entire_file(
@@ -111,6 +118,8 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	if create_vendor_dir == os.ERROR_NONE {
 		append(&results, true)
+	} else {
+		append(&results, false)
 	}
 
 	project_json := project_create_json(self)
