@@ -32,7 +32,7 @@ project_create_json :: proc(using self: Project) -> bool {
 
 // create our directories, such as src, test, vendor, including any neccessary .odin files
 @(private)
-project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
+project_create_dirs :: proc(using self: Project) -> bool {
 
 	results := [dynamic]bool{}
 
@@ -124,7 +124,7 @@ project_create_dirs :: proc(using self: Project) -> (dir: string, ok: bool) {
 	result := utils.all_true(results)
 
 	// just return package.json as it will always be that name
-	return "package.json", result
+	return result
 }
 
 // Create our project
@@ -136,8 +136,8 @@ project_create :: proc(
 	description: string,
 	dependencies: map[string]string,
 ) -> (
-	proj: Project,
-	ok: bool,
+	Project,
+	bool,
 ) {
 	// TODO(ethan): figure out a better way to handle this
 	new_author := author
@@ -157,7 +157,7 @@ project_create :: proc(
 		dependencies = dependencies,
 	}
 
-	_, result := project_create_dirs(project)
+	result := project_create_dirs(project)
 
 	return project, result
 }

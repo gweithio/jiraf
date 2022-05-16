@@ -180,7 +180,8 @@ main :: proc() {
 		return
 	}
 
-	if parsed_map["type"] == "" && !is_a_command(args[0]) {
+	if (parsed_map["type"] == "" || parsed_map["type"] != "exe" || parsed_map["type"] != "lib") &&
+	   !is_a_command(args[0]) {
 		fmt.eprintln(`Provide a project type, like -type:exe for an executable project or -type:lib for a library`)
 		return
 	}
@@ -197,12 +198,12 @@ main :: proc() {
 	)
 
 	if ok {
-		fmt.println(strings.concatenate([]string{new_project.name, " has been created"}))
+		fmt.printf("%s has been created\n", new_name)
 		return
 	}
 
 	if !ok {
-		fmt.eprintln("Failed to create project")
+		fmt.eprintf("Failed to create project %s\n", new_name)
 	}
 
 }
