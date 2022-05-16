@@ -1,7 +1,7 @@
 <p align="center">
     <img src="misc/logo-slim.png" alt="Jiraf logo" style="width:65%">
     <br/>
-    A basic project builder for Odin
+    A Project creation tool for Odin
     <br/>
     <br/>
 </p>
