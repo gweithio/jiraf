@@ -35,26 +35,52 @@ parse_args :: proc(args: []string) -> [dynamic]map[string]string {
 
 // run the project by calling odin run
 run_project :: proc(project: map[string]string) {
+	// Don't really need the command_builder
+	command_builder := &strings.Builder{}
+
+	run_command := fmt.sbprintf(
+		command_builder,
+		"odin run src/main.odin -file -out:%s -warnings-as-errors -collection:shared=src -collection:vendor=vendor",
+		strings.to_lower(project["name"]),
+	)
+
 	fmt.println(strings.concatenate([]string{"Running ", project["name"], "..."}))
 
-	// TODO(gweithio): run the project by calling
-	// odin run src/main.odin -file -collection:shared=src -collection:vendor=vendor
+	// TODO(gweithio): run the project by calling run command through Fork
 }
 
 // build the project by calling odin build
 build_project :: proc(project: map[string]string) {
+
+	// Don't really need the command_builder
+	command_builder := &strings.Builder{}
+
+	build_command := fmt.sbprintf(
+		command_builder,
+		"odin build src -o:speed -out:%s -warnings-as-errors -collection:shared=src -collection:vendor=vendor",
+		strings.to_lower(project["name"]),
+	)
+
 	fmt.println(strings.concatenate([]string{"Building ", project["name"], "..."}))
 
-	// TODO(gweithio): run the project by calling
-	// odin build src -o:speed -out:jiraf -collection:shared=src -collection:vendor=vendor
+	// TODO(gweithio): run the project by calling build_command through Fork
 }
 
 // Run tests by calling odin test
 run_tests :: proc(project: map[string]string) {
+
+	// Don't really need the command_builder
+	command_builder := &strings.Builder{}
+
+	test_command := fmt.sbprintf(
+		command_builder,
+		"odin test tests -warnings-as-errors -show-timings -collection:shared=src -collection:vendor=vendor",
+		strings.to_lower(project["name"]),
+	)
+
 	fmt.println("Running Tests...")
 
-	// TODO(gweithio): run the project by calling
-	// odin test tests -warnings-as-errors -show-timings -collection:shared=src
+	// TODO(gweithio): run tests on the project by calling tests_command through Fork
 }
 
 // Check if project.json exists, used for whether we can do the run, build or test commands
