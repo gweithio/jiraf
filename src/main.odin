@@ -180,13 +180,6 @@ main :: proc() {
 		return
 	}
 
-	if (parsed_map["type"] == "" || parsed_map["type"] != "exe" || parsed_map["type"] != "lib") &&
-	   !is_a_command(args[0]) {
-		fmt.eprintln(`Provide a project type, like -type:exe for an executable project or -type:lib for a library`)
-		return
-	}
-
-
 	// create our project
 	new_project, ok := jiraf.project_create(
 		name = strings.to_lower(new_name),
@@ -205,5 +198,4 @@ main :: proc() {
 	if !ok {
 		fmt.eprintf("Failed to create project %s\n", new_name)
 	}
-
 }
