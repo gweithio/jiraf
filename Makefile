@@ -11,7 +11,10 @@ build:
 	odin build src -o:speed -out:jiraf -collection:shared=src
 
 install:
-	make build && mv jiraf ~/bin
+	make build && make move 
+
+move:
+	mv jiraf ~/bin
 
 clean:
 	rm tests/.bin
