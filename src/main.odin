@@ -58,17 +58,15 @@ build_project :: proc(project: map[string]string) {
 		strings.to_lower(project["name"]),
 	)
 
-	fmt.println(strings.concatenate([]string{"Building ", project["name"], "..."}))
-
+	fmt.println("Building", project["name"], "...")
 	// TODO(gweithio): run the project by calling build_command through Fork
 }
 
 // Run tests by calling odin test
 run_tests :: proc(project: map[string]string) {
 
-	test_command := fmt.tprintf(
+	test_command := fmt.tprintln(
 		"odin test tests -warnings-as-errors -show-timings -collection:shared=src -collection:pkg=pkg",
-		strings.to_lower(project["name"]),
 	)
 
 	fmt.println("Running Tests...")
