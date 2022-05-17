@@ -34,36 +34,36 @@ parse_args :: proc(args: []string) -> [dynamic]map[string]string {
 }
 
 // run the project by calling odin run
-run_project :: proc(project: map[string]string) {
+run_project :: proc(project: Project_Data) {
 	// Don't really need the command_builder
 	command_builder := &strings.Builder{}
 
 	run_command := fmt.sbprintf(
 		command_builder,
 		"odin run src/main.odin -file -out:%s -warnings-as-errors -collection:shared=src -collection:pkg=pkg",
-		strings.to_lower(project["name"]),
+		strings.to_lower(project.name),
 	)
 
-	fmt.println(strings.concatenate([]string{"Running ", project["name"], "..."}))
+	fmt.println(strings.concatenate([]string{"Running ", project.name, "..."}))
 
 	// TODO(gweithio): run the project by calling run command through Fork
 }
 
 // build the project by calling odin build
-build_project :: proc(project: map[string]string) {
+build_project :: proc(project: Project_Data) {
 
 	// Don't really need the command_builder
 	build_command := fmt.tprintf(
 		"odin build src -o:speed -out:%s -warnings-as-errors -collection:shared=src -collection:pkg=pkg",
-		strings.to_lower(project["name"]),
+		strings.to_lower(project.name),
 	)
 
-	fmt.println("Building", project["name"], "...")
+	fmt.println("Building", project.name, "...")
 	// TODO(gweithio): run the project by calling build_command through Fork
 }
 
 // Run tests by calling odin test
-run_tests :: proc(project: map[string]string) {
+run_tests :: proc(project: Project_Data) {
 
 	test_command := fmt.tprintln(
 		"odin test tests -warnings-as-errors -show-timings -collection:shared=src -collection:pkg=pkg",
@@ -91,23 +91,44 @@ is_a_command :: proc(cmd: string) -> bool {
 	return false
 }
 
+// Possible project types
+Project_Type :: enum {
+	Exe,
+	Lib,
+}
+
 // Get the project.json and stuff it into a map[string]string
-get_project_from_json :: proc() -> map[string]string {
-	file, err := os.read_entire_file_from_filename("project.json")
-	defer delete(file)
+Project_Data :: struct {
+	name, author, version: string,
+	type:                  Project_Type,
+}
 
-	json_data, _ := json.parse(file)
+get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
+	content := os.read_entire_file("project.json") or_return
 
-	project_data := json_data.(json.Object)
+	parsed, err := json.parse(content)
+	if err != nil do return
 
-	// TODO(ethan): this is somewhat trash, needs to be improved, a loop maybe useful!
-	project_map := make(map[string]string)
-	project_map["name"] = project_data["name"].(json.String)
-	project_map["type"] = project_data["type"].(json.String)
-	project_map["author"] = project_data["author"].(json.String)
-	project_map["version"] = project_data["version"].(json.String)
+	json_data := parsed.(json.Object) or_return
 
-	return project_map
+	name, type, author, version: string
+	name = json_data["name"].(json.String) or_return
+	type = json_data["type"].(json.String) or_return
+	author = json_data["author"].(json.String) or_return
+	version = json_data["version"].(json.String) or_return
+
+
+	ty: Project_Type
+	switch type {
+	case "exe":
+		ty = .Exe
+	case "lib":
+		ty = .Lib
+	case:
+		return
+	}
+
+	return {name = name, type = ty, author = author, version = version}, ok
 }
 
 print_help :: proc() {
@@ -140,7 +161,8 @@ main :: proc() {
 	}
 
 	if is_a_command(args[0]) {
-		project_json := get_project_from_json()
+		project_json, ok := get_project_from_json()
+		if !ok do return
 
 		// Get all args other than the current filename
 		switch (args[0]) {
