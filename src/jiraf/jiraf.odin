@@ -66,21 +66,12 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	create_src_dir := os.make_directory("src")
 
-	if create_src_dir == os.ERROR_NONE {
-		append(&results, true)
-	} else {
-		append(&results, false)
-	}
+	append(&results, create_src_dir == os.ERROR_NONE)
 
 	src_package_dir_str := strings.concatenate([]string{"src/", self.name})
 	create_src_package_dir := os.make_directory(src_package_dir_str)
 
-	if create_src_package_dir == os.ERROR_NONE {
-		append(&results, true)
-	} else {
-		append(&results, false)
-
-	}
+	append(&results, create_src_package_dir == os.ERROR_NONE)
 
 	main_file := os.write_entire_file(
 		"src/main.odin",
@@ -100,11 +91,7 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	create_tests_dir := os.make_directory("tests")
 
-	if create_tests_dir == os.ERROR_NONE {
-		append(&results, true)
-	} else {
-		append(&results, false)
-	}
+	append(&results, create_tests_dir == os.ERROR_NONE)
 
 	test_file := os.write_entire_file(
 		strings.concatenate([]string{"tests/", self.name, "_test", ".odin"}),
@@ -116,15 +103,10 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	create_vendor_dir := os.make_directory("vendor")
 
-	if create_vendor_dir == os.ERROR_NONE {
-		append(&results, true)
-	} else {
-		append(&results, false)
-	}
+	append(&results, create_vendor_dir == os.ERROR_NONE)
 
 	project_json := project_create_json(self)
 	append(&results, project_json)
-
 
 	git_keep := os.write_entire_file("vendor/.gitkeep", []byte{})
 
