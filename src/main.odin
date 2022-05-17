@@ -40,7 +40,7 @@ run_project :: proc(project: map[string]string) {
 
 	run_command := fmt.sbprintf(
 		command_builder,
-		"odin run src/main.odin -file -out:%s -warnings-as-errors -collection:shared=src -collection:vendor=vendor",
+		"odin run src/main.odin -file -out:%s -warnings-as-errors -collection:shared=src -collection:pkg=pkg",
 		strings.to_lower(project["name"]),
 	)
 
@@ -54,7 +54,7 @@ build_project :: proc(project: map[string]string) {
 
 	// Don't really need the command_builder
 	build_command := fmt.tprintf(
-		"odin build src -o:speed -out:%s -warnings-as-errors -collection:shared=src -collection:vendor=vendor",
+		"odin build src -o:speed -out:%s -warnings-as-errors -collection:shared=src -collection:pkg=pkg",
 		strings.to_lower(project["name"]),
 	)
 
@@ -67,7 +67,7 @@ build_project :: proc(project: map[string]string) {
 run_tests :: proc(project: map[string]string) {
 
 	test_command := fmt.tprintf(
-		"odin test tests -warnings-as-errors -show-timings -collection:shared=src -collection:vendor=vendor",
+		"odin test tests -warnings-as-errors -show-timings -collection:shared=src -collection:pkg=pkg",
 		strings.to_lower(project["name"]),
 	)
 

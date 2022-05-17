@@ -7,6 +7,10 @@
         {
             "name": "shared",
             "path": "/Users/gweithio/git/jiraf/src"
+        },
+        {
+            "name": "pkg",
+            "path": "/Users/gweithio/git/jiraf/pkg"
         }
     ],
     "enable_snippets": true,

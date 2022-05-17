@@ -30,7 +30,7 @@ project_create_json :: proc(using self: Project) -> bool {
 	return os.write_entire_file("project.json", new_data)
 }
 
-// create our directories, such as src, test, vendor, including any neccessary .odin files
+// create our directories, such as src, test, pkg, including any neccessary .odin files
 @(private)
 project_create_dirs :: proc(using self: Project) -> bool {
 
@@ -101,14 +101,14 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	append(&results, test_file)
 
-	create_vendor_dir := os.make_directory("vendor")
+	create_pkg_dir := os.make_directory("pkg")
 
-	append(&results, create_vendor_dir == os.ERROR_NONE)
+	append(&results, create_pkg_dir == os.ERROR_NONE)
 
 	project_json := project_create_json(self)
 	append(&results, project_json)
 
-	git_keep := os.write_entire_file("vendor/.gitkeep", []byte{})
+	git_keep := os.write_entire_file("pkg/.gitkeep", []byte{})
 
 	append(&results, git_keep)
 
