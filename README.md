@@ -40,6 +40,9 @@ $ jiraf build # Build your project
 $ jiraf test # Will run your tests
 ```
 
+## Building Jiraf
+A Makefile is provided if you wish to build Jiraf, use `make build` and `make test` to run tests
+
 ## Warnings
 
 * Jiraf is still in development.
