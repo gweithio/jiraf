@@ -36,6 +36,13 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	results := [dynamic]bool{}
 
+	project_dir := os.make_directory(self.name)
+	append(&results, project_dir == os.ERROR_NONE)
+
+	swap_dir := os.set_current_directory(self.name)
+	append(&results, swap_dir == os.ERROR_NONE)
+
+
 	main_odin_content := `
     package main
     
