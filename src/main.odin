@@ -187,6 +187,11 @@ main :: proc() {
 
 	args := os.args[1:]
 
+	if len(os.args) <= 1 || !is_a_command(args[0]) {
+		print_help()
+		return
+	}
+
 	if len(args) >= 0 && is_a_command(args[0]) {
 		project_json, ok := get_project_from_json()
 		if !ok do return
