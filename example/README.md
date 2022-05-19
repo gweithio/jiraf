@@ -1,7 +1,9 @@
 Calling the following command 
 ```
-$ jiraf -name:"Example Project" -type:exe
+$ jiraf new -name:"Example Project" -type:exe
 ```
+
+You can run this example by doing `jiraf run`, `jiraf test` or `jiraf build`
 
 generated the following directories and files
 
