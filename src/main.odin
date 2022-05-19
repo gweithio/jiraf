@@ -183,39 +183,44 @@ main :: proc() {
 		return
 	}
 
-	parsed_args := parse_args(args)
-	parsed_map := make(map[string]string)
+	if args[0] == "new" {
+		parsed_args := parse_args(args)
+		parsed_map := make(map[string]string)
 
-	for m, _ in parsed_args {
-		for k, v in m {
-			parsed_map[k] = v
+		for m, _ in parsed_args {
+			for k, v in m {
+				parsed_map[k] = v
+			}
 		}
-	}
 
-	// strip whitespace from the name
-	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
+		// strip whitespace from the name
+		new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
 
-	if parsed_map["name"] == "" && !is_a_command(args[0]) {
-		fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)
-		return
-	}
+		if parsed_map["name"] == "" && !is_a_command(args[0]) {
+			fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)
+			fmt.eprintln(`Provide a type for your project, like -type:exe or -type:lib`)
+			return
+		}
 
-	// create our project
-	new_project, ok := jiraf.project_create(
-		name = strings.to_lower(new_name),
-		type = parsed_map["type"],
-		author = parsed_map["author"],
-		version = parsed_map["version"],
-		description = parsed_map["desc"],
-		dependencies = make(map[string]string),
-	)
 
-	if ok {
-		fmt.printf("%s has been created\n", new_name)
-		return
-	}
+		// create our project
+		new_project, ok := jiraf.project_create(
+			name = strings.to_lower(new_name),
+			type = parsed_map["type"],
+			author = parsed_map["author"],
+			version = parsed_map["version"],
+			description = parsed_map["desc"],
+			dependencies = make(map[string]string),
+		)
 
-	if !ok {
-		fmt.eprintf("Failed to create project %s\n", new_name)
+		if ok {
+			fmt.printf("%s has been created\n", new_name)
+			return
+		}
+
+		if !ok {
+			fmt.eprintf("Failed to create project %s\n", new_name)
+		}
+
 	}
 }
