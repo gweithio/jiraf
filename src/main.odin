@@ -137,7 +137,7 @@ get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
 print_help :: proc() {
 
 	fmt.println()
-	fmt.println(`usage: jiraf -name:"project name" -type:exe`)
+	fmt.println(`usage: jiraf new -name:"project name" -type:exe`)
 
 	fmt.print(`
     -name:"project name" - [required] The name of the package

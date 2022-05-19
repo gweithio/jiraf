@@ -2,8 +2,10 @@ package jiraf
 
 import "core:os"
 import "core:strings"
+import "core:fmt"
 import "core:encoding/json"
 import "shared:jiraf/utils"
+import "core:c/libc"
 
 DEFAULT_AUTHOR :: "TODO: PROJECT AUTHOR"
 DEFAULT_VERSION :: "TODO: PROJECT VERSION"
@@ -16,6 +18,35 @@ Project :: struct {
 	version:      string,
 	description:  string,
 	dependencies: map[string]string,
+}
+
+
+Odin_Lang_Server :: struct {
+	collections:             []map[string]string,
+	thread_pool_count:       i32,
+	enable_snippets:         bool,
+	enable_document_symbols: bool,
+	enable_hover:            bool,
+	enable_global_std:       bool,
+	verbose:                 bool,
+}
+
+@(private)
+project_create_ols_json :: proc() -> bool {
+
+	default_collections := make(map[string]string)
+
+	default_collections["core"] = "TODO: SET TO FULL PATH WHERE ODIN IS LOCATED"
+
+	default_collections["shared"] = fmt.tprintf("%s%s", os.get_current_directory(), "/src")
+
+	lang_server_default := Odin_Lang_Server {
+		collections = {default_collections},
+	}
+
+	parsed, err := json.marshal(lang_server_default)
+
+	return os.write_entire_file("ols.json", parsed)
 }
 
 // create our project.json
@@ -114,6 +145,9 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	project_json := project_create_json(self)
 	append(&results, project_json)
+
+	ols_json := project_create_ols_json()
+	append(&results, ols_json)
 
 	git_keep := os.write_entire_file("pkg/.gitkeep", []byte{})
 
