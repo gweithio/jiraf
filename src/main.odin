@@ -35,14 +35,18 @@ parse_args :: proc(args: []string) -> [dynamic]map[string]string {
 }
 
 // run the project by calling odin run
-run_project :: proc(project: Project_Data) {
+run_project :: proc(project: Project_Data, args: []string) {
 	// Don't really need the command_builder
-	command_builder := &strings.Builder{}
 
-	run_command := fmt.sbprintf(
-		command_builder,
-		"odin run src/main.odin -file -out:%s -warnings-as-errors -collection:shared=src -collection:pkg=pkg",
+	arg_string := ""
+	for arg in args {
+		arg_string = strings.concatenate([]string{arg, " "})
+	}
+
+	run_command := fmt.tprintf(
+		"odin run src/main.odin -file -out:%s %s -collection:shared=src -collection:pkg=pkg",
 		strings.to_lower(project.name),
+		arg_string,
 	)
 
 	fmt.println(strings.concatenate([]string{"Running ", project.name, "..."}))
@@ -51,12 +55,18 @@ run_project :: proc(project: Project_Data) {
 }
 
 // build the project by calling odin build
-build_project :: proc(project: Project_Data) {
+build_project :: proc(project: Project_Data, args: []string) {
+
+	arg_string := ""
+	for arg in args {
+		arg_string = strings.concatenate([]string{arg, " "})
+	}
 
 	// Don't really need the command_builder
 	build_command := fmt.tprintf(
-		"odin build src -o:speed -out:%s -warnings-as-errors -collection:shared=src -collection:pkg=pkg",
+		"odin build src -out:%s %s -collection:shared=src -collection:pkg=pkg",
 		strings.to_lower(project.name),
+		arg_string,
 	)
 
 	fmt.println("Building", project.name, "...")
@@ -65,25 +75,21 @@ build_project :: proc(project: Project_Data) {
 }
 
 // Run tests by calling odin test
-run_tests :: proc(project: Project_Data) {
+run_tests :: proc(project: Project_Data, args: []string) {
 
-	test_command := fmt.tprintln(
-		"odin test tests -warnings-as-errors -show-timings -collection:shared=src -collection:pkg=pkg",
+	arg_string := ""
+	for arg in args {
+		arg_string = strings.concatenate([]string{arg, " "})
+	}
+
+	test_command := fmt.tprintf(
+		"odin test tests %s -collection:shared=src -collection:pkg=pkg",
+		arg_string,
 	)
 
 	fmt.println("Running Tests...")
 	cmd := strings.clone_to_cstring(test_command)
 	libc.system(cmd)
-}
-
-// Check if project.json exists, used for whether we can do the run, build or test commands
-does_package_exist :: proc() -> bool {
-	// TODO(gweithio): this doesn't really check if it exists
-	if !os.is_file("project.json") {
-		fmt.println("Please create a project first")
-		return false
-	}
-	return true
 }
 
 // Check if the given parameter is a command
@@ -158,28 +164,34 @@ main :: proc() {
 
 	args := os.args[1:]
 
-	if len(args) <= 0 || args[0] == "-help" || args[0] == "-h" || args[0] == "help" {
-		print_help()
-		return
-	}
-
 	if is_a_command(args[0]) {
 		project_json, ok := get_project_from_json()
 		if !ok do return
 
+		args_for_command := []string{}
+
+		if (len(args) >= 2) {
+			args_for_command = args[2:]
+		}
+
 		// Get all args other than the current filename
 		switch (args[0]) {
 		case "run":
-			run_project(project_json)
+			run_project(project_json, args_for_command)
 			return
 		case "build":
-			build_project(project_json)
+			build_project(project_json, args_for_command)
 			return
 		case "test":
-			run_tests(project_json)
+			run_tests(project_json, args_for_command)
 			return
 		}
 
+		return
+	} else if args[0] == "-help" || args[0] == "-h" || args[0] == "help" {
+		print_help()
+		return
+	} else {
 		return
 	}
 
