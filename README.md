@@ -35,10 +35,15 @@ $ jiraf new -name:"Test Project" -author:"ethan@epmor.app" -desc:"My cool projec
 
 Run your project
 ```bash
-$ jiraf run # Will run your project
+$ jiraf run -warnings-as-errors # Will run your project you can also pass in arguments to the compiler
 $ jiraf build # Build your project
 $ jiraf test # Will run your tests
+$ jiraf get https://github.com/gweithio/arrays/ # The arrays package gets added the pkg directory
 ```
+
+*NOTE*
+
+For `jiraf get` the import for the example is pkg:arrays/src/arrays which is dependent on project structure of the dep you've just added
 
 ## Building Jiraf
 A Makefile is provided if you wish to build Jiraf, use `make build` and `make test` to run tests
