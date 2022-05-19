@@ -31,6 +31,15 @@ See the `example/` for an example of what jiraf generates
 $ jiraf -name:"Test Project" -author:"ethan@epmor.app" -desc:"My cool project" -version:"0.1" -type:exe 
 ```
 
+*As of v0.3* you can now run the following commands
+
+Run your project
+```bash
+$ jiraf run # Will run your project
+$ jiraf build # Build your project
+$ jiraf test # Will run your tests
+```
+
 ## Warnings
 
 * Jiraf is still in development.
