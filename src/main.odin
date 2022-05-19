@@ -5,6 +5,7 @@ import "core:os"
 import "core:strings"
 import "shared:jiraf"
 import "core:encoding/json"
+import "core:c/libc"
 
 // Parse values from the args so we have a map[string]string
 get_value_after_slash :: proc(v: string) -> map[string]string {
@@ -45,8 +46,8 @@ run_project :: proc(project: Project_Data) {
 	)
 
 	fmt.println(strings.concatenate([]string{"Running ", project.name, "..."}))
-
-	// TODO(gweithio): run the project by calling run command through Fork
+	cmd := strings.clone_to_cstring(run_command)
+	libc.system(cmd)
 }
 
 // build the project by calling odin build
@@ -59,7 +60,8 @@ build_project :: proc(project: Project_Data) {
 	)
 
 	fmt.println("Building", project.name, "...")
-	// TODO(gweithio): run the project by calling build_command through Fork
+	cmd := strings.clone_to_cstring(build_command)
+	libc.system(cmd)
 }
 
 // Run tests by calling odin test
@@ -70,17 +72,18 @@ run_tests :: proc(project: Project_Data) {
 	)
 
 	fmt.println("Running Tests...")
-
-	// TODO(gweithio): run tests on the project by calling tests_command through Fork
+	cmd := strings.clone_to_cstring(test_command)
+	libc.system(cmd)
 }
 
 // Check if project.json exists, used for whether we can do the run, build or test commands
-does_package_exist :: proc() {
+does_package_exist :: proc() -> bool {
 	// TODO(gweithio): this doesn't really check if it exists
 	if !os.is_file("project.json") {
 		fmt.println("Please create a project first")
-		return
+		return false
 	}
+	return true
 }
 
 // Check if the given parameter is a command
@@ -128,7 +131,7 @@ get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
 		return
 	}
 
-	return {name = name, type = ty, author = author, version = version}, ok
+	return {name = name, type = ty, author = author, version = version}, true
 }
 
 print_help :: proc() {
@@ -167,15 +170,12 @@ main :: proc() {
 		// Get all args other than the current filename
 		switch (args[0]) {
 		case "run":
-			does_package_exist()
 			run_project(project_json)
 			return
 		case "build":
-			does_package_exist()
 			build_project(project_json)
 			return
 		case "test":
-			does_package_exist()
 			run_tests(project_json)
 			return
 		}

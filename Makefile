@@ -1,5 +1,5 @@
 .PHONY: test
-default: run
+default: build
 
 run: 
 	odin run src/*.odin -file -warnings-as-errors -collection:shared=src
@@ -14,7 +14,7 @@ install:
 	make build && make move 
 
 move:
-	mv jiraf ~/bin
+	cp jiraf ~/bin
 
 clean:
 	rm tests/.bin
