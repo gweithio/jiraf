@@ -38,7 +38,7 @@ Run your project
 $ jiraf run -warnings-as-errors # Will run your project you can also pass in arguments to the compiler
 $ jiraf build # Build your project
 $ jiraf test # Will run your tests
-$ jiraf get https://github.com/gweithio/arrays/ # The arrays package gets added the pkg directory
+$ jiraf get https://github.com/gweithio/arrays # The arrays package gets added the pkg directory
 ```
 
 *NOTE*
