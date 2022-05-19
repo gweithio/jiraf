@@ -7,9 +7,9 @@
 </p>
 
 
-# Jiraf - Odin Project Creation Tool
+# Jiraf - Odin build tool that makes it easy to run, compile and test.
 
-Jiraf is a minimal project creation tool for Odin. It creates a basic project structure to get started. It is currently in active development and in its infancy. Feel freee to read the [CONTRIBUTING](https://github.com/gweithio/jiraf/blob/main/CONTRIBUTING.md) if you wish to contribute to the project.
+Jiraf is a minimal build tool that makes it easy to run, compile and test Odin projects. It creates a basic project structure to get started. It is currently in active development and in its infancy. Feel free to read the [CONTRIBUTING](https://github.com/gweithio/jiraf/blob/main/CONTRIBUTING.md) if you wish to contribute to the project.
 
 See [article on Jiraf](https://www.epmor.app/posts/introducing-jiraf) for some background information
 
