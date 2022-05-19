@@ -37,8 +37,9 @@ project_create_ols_json :: proc() -> bool {
 	default_collections := make(map[string]string)
 
 	default_collections["core"] = "TODO: SET TO FULL PATH WHERE ODIN IS LOCATED"
-
 	default_collections["shared"] = fmt.tprintf("%s%s", os.get_current_directory(), "/src")
+	default_collections["pkg"] = fmt.tprintf("%s%s", os.get_current_directory(), "/pkg")
+
 
 	lang_server_default := Odin_Lang_Server {
 		collections = {default_collections},
