@@ -92,9 +92,31 @@ run_tests :: proc(project: Project_Data, args: []string) {
 	libc.system(cmd)
 }
 
+get_dep :: proc(project: Project_Data, url: string) {
+	if url == "" {
+		fmt.eprintln("please provide a github url")
+		return
+	}
+
+	curr_dir := os.get_current_directory()
+	pkg_dir := fmt.tprintf("%s/pkg", curr_dir)
+
+	err := os.set_current_directory(pkg_dir)
+
+	if err != os.ERROR_NONE {
+		fmt.eprintln("Failed to swap to pkg directory")
+		return
+	}
+
+	get_command := fmt.tprintf("git clone %s", url)
+	cmd := strings.clone_to_cstring(get_command)
+	fmt.println(cmd)
+	libc.system(cmd)
+}
+
 // Check if the given parameter is a command
 is_a_command :: proc(cmd: string) -> bool {
-	if cmd == "run" || cmd == "test" || cmd == "build" {
+	if cmd == "run" || cmd == "test" || cmd == "build" || cmd == "get" {
 		return true
 	}
 	return false
@@ -160,11 +182,12 @@ print_help :: proc() {
     `)
 }
 
+
 main :: proc() {
 
 	args := os.args[1:]
 
-	if is_a_command(args[0]) {
+	if len(args) >= 0 && is_a_command(args[0]) {
 		project_json, ok := get_project_from_json()
 		if !ok do return
 
@@ -184,6 +207,13 @@ main :: proc() {
 			return
 		case "test":
 			run_tests(project_json, args_for_command)
+			return
+		case "get":
+			if len(args) < 2 {
+				fmt.eprintln("Please provide a Github Url")
+				return
+			}
+			get_dep(project_json, args[1])
 			return
 		}
 
