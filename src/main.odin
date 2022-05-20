@@ -36,8 +36,7 @@ parse_args :: proc(args: []string) -> (res: map[string]string) {
 		key, val := get_value_after_slash(arg)
 		res[key] = val
 	}
-
-	return res
+	return
 }
 
 // run the project by calling odin run
@@ -46,16 +45,22 @@ run_project :: proc(project: Project_Data, args: []string) {
 
 	arg_string := ""
 	for arg in args {
-		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
+		arg_string = strings.concatenate([]string{arg, " "})
+	}
+
+	shared_location := "src"
+	if project.type == Project_Type.Lib {
+		shared_location = "."
 	}
 
 	run_command := fmt.tprintf(
-		"odin run src/main.odin -file -out:%s %s -collection:shared=src -collection:pkg=pkg",
-		strings.to_lower(project.name),
+		"odin run src/main.odin -file -out:%s %s -collection:shared=%s -collection:pkg=pkg",
+		strings.to_lower(project.name, context.temp_allocator),
 		arg_string,
+		shared_location,
 	)
 
-	fmt.println("Running ", project.name, "...")
+	fmt.println(strings.concatenate([]string{"Running ", project.name, "..."}))
 	cmd := strings.clone_to_cstring(run_command, context.temp_allocator)
 	libc.system(cmd)
 }
@@ -68,11 +73,17 @@ build_project :: proc(project: Project_Data, args: []string) {
 		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
 	}
 
+	shared_location := "src"
+	if project.type == Project_Type.Lib {
+		shared_location = "."
+	}
+
 	// Don't really need the command_builder
 	build_command := fmt.tprintf(
-		"odin build src -out:%s %s -collection:shared=src -collection:pkg=pkg",
-		strings.to_lower(project.name),
+		"odin build src -out:%s %s -collection:shared=%s -collection:pkg=pkg",
+		strings.to_lower(project.name, context.temp_allocator),
 		arg_string,
+		shared_location,
 	)
 
 	fmt.println("Building", project.name, "...")
@@ -85,16 +96,22 @@ run_tests :: proc(project: Project_Data, args: []string) {
 
 	arg_string := ""
 	for arg, i in args {
-		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
+		arg_string = strings.concatenate([]string{arg, " "})
+	}
+
+	shared_location := "src"
+	if project.type == Project_Type.Lib {
+		shared_location = "."
 	}
 
 	test_command := fmt.tprintf(
-		"odin test tests %s -collection:shared=src -collection:pkg=pkg",
+		"odin test tests %s -collection:shared=%s -collection:pkg=pkg",
 		arg_string,
+		shared_location,
 	)
 
 	fmt.println("Running Tests...")
-	cmd := strings.clone_to_cstring(test_command)
+	cmd := strings.clone_to_cstring(test_command, context.temp_allocator)
 	libc.system(cmd)
 }
 
@@ -111,27 +128,22 @@ get_dep :: proc(project: Project_Data, url: string) {
 
 	err := os.set_current_directory(pkg_dir)
 
-
 	if err != os.ERROR_NONE {
 		fmt.eprintln("Failed to swap to pkg directory")
 		return
 	}
 
 	get_command := fmt.tprintf("git clone %s", url)
-
 	cmd := strings.clone_to_cstring(get_command, context.temp_allocator)
-	fmt.println(cmd)
 	libc.system(cmd)
 }
 
 // Check if the given parameter is a command
-is_a_command :: proc(cmd: string) -> (ok: bool) {
+is_a_command :: proc(cmd: string) -> bool {
 	if cmd == "run" || cmd == "test" || cmd == "build" || cmd == "get" || cmd == "version" {
-		ok = true
-		return
+		return true
 	}
-	ok = true
-	return
+	return false
 }
 
 // Possible project types
@@ -146,27 +158,23 @@ Project_Data :: struct {
 	type:                  Project_Type,
 }
 
-get_project_from_json :: proc() -> (Project_Data, bool) {
-	content, ok := os.read_entire_file("project.json", context.temp_allocator)
+get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
+	content := os.read_entire_file("project.json", context.temp_allocator) or_return
 
-	parsed, err := json.parse(
+	parsed, _ := json.parse(
 		content,
 		json.DEFAULT_SPECIFICATION,
 		false,
 		context.temp_allocator,
 	)
 
-	if err != json.Error.None {
-		return {}, false
-	}
-
-	json_data := parsed.(json.Object)
+	json_data := parsed.(json.Object) or_return
 
 	name, type, author, version: string
-	name = json_data["name"].(json.String)
-	type = json_data["type"].(json.String)
-	author = json_data["author"].(json.String)
-	version = json_data["version"].(json.String)
+	name = json_data["name"].(json.String) or_return
+	type = json_data["type"].(json.String) or_return
+	author = json_data["author"].(json.String) or_return
+	version = json_data["version"].(json.String) or_return
 
 
 	ty: Project_Type
@@ -176,7 +184,7 @@ get_project_from_json :: proc() -> (Project_Data, bool) {
 	case "lib":
 		ty = .Lib
 	case:
-		return {}, false
+		return
 	}
 
 	return {name = name, type = ty, author = author, version = version}, true
@@ -202,7 +210,7 @@ print_help :: proc() {
     `)
 }
 
-create_project :: proc(args: []string) -> (ok: bool) {
+create_project :: proc(args: []string) -> bool {
 	parsed_map := parse_args(args)
 	defer delete(parsed_map)
 
@@ -213,26 +221,21 @@ create_project :: proc(args: []string) -> (ok: bool) {
 	}
 
 	// strip whitespace from the name
-	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
+	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_", context.temp_allocator)
+
+	deps := make(map[string]string, 0, context.temp_allocator)
 
 	// create our project
-	new_project, res := jiraf.project_create(
-		name = new_name,
+	new_project, ok := jiraf.project_create(
+		name = strings.to_lower(new_name, context.temp_allocator),
 		type = parsed_map["type"],
 		author = parsed_map["author"],
 		version = parsed_map["version"],
 		description = parsed_map["desc"],
-		dependencies = map[string]string{},
+		dependencies = deps,
 	)
-	ok = res
 
-	if ok {
-		fmt.printf("%s has been created\n", new_name)
-		return
-	} else {
-		fmt.eprintf("Failed to create project %s\n", new_name)
-		return
-	}
+	return ok
 }
 
 _main :: proc() {
@@ -245,10 +248,12 @@ _main :: proc() {
 	}
 
 	if args[0] == "new" {
-		ok := create_project(args)
-		if !ok {
+		create_ok := create_project(args)
+		if !create_ok {
 			fmt.println("Failed to create project")
 			return
+		} else {
+			fmt.println("Project created")
 		}
 	}
 
@@ -264,7 +269,7 @@ _main :: proc() {
 
 		switch (args[0]) {
 		case "version":
-			fmt.println(project_json.version)
+			fmt.println("0.3.3")
 		case "run":
 			run_project(project_json, args[1:])
 			return

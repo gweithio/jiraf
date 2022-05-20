@@ -51,26 +51,22 @@ project_create_ols_json :: proc() -> bool {
 		collections = {default_collections},
 	}
 
-	parsed, err := json.marshal(lang_server_default, context.temp_allocator)
+	parsed, _ := json.marshal(lang_server_default, context.temp_allocator)
 
 	return os.write_entire_file("ols.json", parsed)
 }
 
 // create our project.json
 @(private)
-project_create_json :: proc(using self: Project) -> bool {
-	new_data, err := json.marshal(self)
-
-	if err != nil {
-		return false
-	}
+project_create_json :: proc(self: Project) -> bool {
+	new_data, _ := json.marshal(self, context.temp_allocator)
 
 	return os.write_entire_file("project.json", new_data)
 }
 
 // create our directories, such as src, test, pkg, including any neccessary .odin files
 @(private)
-project_create_dirs :: proc(using self: Project) -> bool {
+project_create_dirs :: proc(self: Project) -> bool {
 
 	results := [dynamic]bool{}
 	defer delete(results)
@@ -93,8 +89,10 @@ project_create_dirs :: proc(using self: Project) -> bool {
 		project_json := project_create_json(self)
 		append(&results, project_json)
 
-		package_odin_content := strings.concatenate([]string{"package ", self.name})
-		defer delete(package_odin_content)
+		package_odin_content := strings.concatenate(
+			[]string{"package ", self.name},
+			context.temp_allocator,
+		)
 
 		package_file_data := strings.concatenate(
 			[]string{self.name, "/", self.name, ".odin"},
@@ -127,8 +125,10 @@ project_create_dirs :: proc(using self: Project) -> bool {
         }
         `
 
-		test_file_data := strings.concatenate([]string{"tests/", self.name, "_test", ".odin"})
-		defer delete(test_file_data)
+		test_file_data := strings.concatenate(
+			[]string{"tests/", self.name, "_test", ".odin"},
+			context.temp_allocator,
+		)
 
 		test_file := os.write_entire_file(
 			test_file_data,
@@ -156,8 +156,10 @@ project_create_dirs :: proc(using self: Project) -> bool {
     }
     `
 
-	package_odin_content := strings.concatenate([]string{"package ", self.name})
-	defer delete(package_odin_content)
+	package_odin_content := strings.concatenate(
+		[]string{"package ", self.name},
+		context.temp_allocator,
+	)
 
 	test_odin_content := `
     import "core:testing"
@@ -173,16 +175,17 @@ project_create_dirs :: proc(using self: Project) -> bool {
 			self.name,
 			"_test",
 			test_odin_content,
-		})
-
-	defer delete(test_odin_content)
+		}, context.temp_allocator)
 
 	create_src_dir := os.make_directory("src")
 
 	append(&results, create_src_dir == os.ERROR_NONE)
 
-	src_package_dir_str := strings.concatenate([]string{"src/", self.name})
-	defer delete(src_package_dir_str)
+	src_package_dir_str := strings.concatenate(
+		[]string{"src/", self.name},
+		context.temp_allocator,
+	)
+
 	create_src_package_dir := os.make_directory(src_package_dir_str)
 
 	append(&results, create_src_package_dir == os.ERROR_NONE)
@@ -197,9 +200,8 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	package_file_data := strings.concatenate(
 		[]string{src_package_dir_str, "/", self.name, ".odin"},
+		context.temp_allocator,
 	)
-
-	defer delete(package_file_data)
 
 	package_file := os.write_entire_file(
 		package_file_data,
@@ -213,8 +215,10 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 	append(&results, create_tests_dir == os.ERROR_NONE)
 
-	test_file_data := strings.concatenate([]string{"tests/", self.name, "_test", ".odin"})
-	defer delete(test_file_data)
+	test_file_data := strings.concatenate(
+		[]string{"tests/", self.name, "_test", ".odin"},
+		context.temp_allocator,
+	)
 
 	test_file := os.write_entire_file(
 		test_file_data,
