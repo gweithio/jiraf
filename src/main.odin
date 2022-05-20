@@ -116,7 +116,7 @@ get_dep :: proc(project: Project_Data, url: string) {
 
 // Check if the given parameter is a command
 is_a_command :: proc(cmd: string) -> bool {
-	if cmd == "run" || cmd == "test" || cmd == "build" || cmd == "get" {
+	if cmd == "run" || cmd == "test" || cmd == "build" || cmd == "get" || cmd == "version" {
 		return true
 	}
 	return false
@@ -250,6 +250,8 @@ main :: proc() {
 		}
 
 		switch (args[0]) {
+		case "version":
+			fmt.println(project_json.version)
 		case "run":
 			run_project(project_json, args[1:])
 			return
@@ -266,7 +268,6 @@ main :: proc() {
 			}
 			get_dep(project_json, args[1])
 			return
-
 		}
 	} else if args[0] == "-help" || args[0] == "-h" || args[0] == "help" {
 		print_help()
