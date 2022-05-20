@@ -48,11 +48,6 @@ build_project :: proc(project: Project_Data, args: []string) {
 		shared_location = "."
 	}
 
-	shared_location := "src"
-	if project.type == Project_Type.Lib {
-		shared_location = "."
-	}
-
 	// Don't really need the command_builder
 	build_command := fmt.tprintf(
 		"odin build src -out:%s %s -collection:shared=%s -collection:pkg=pkg",
