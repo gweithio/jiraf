@@ -75,6 +75,39 @@ project_create_dirs :: proc(using self: Project) -> bool {
 	append(&results, swap_dir == os.ERROR_NONE)
 
 
+	// create a lib and return rather than a exe project
+	if self.type == "lib" {
+
+		create_pkg_dir := os.make_directory(self.name)
+
+		append(&results, create_pkg_dir == os.ERROR_NONE)
+
+		project_json := project_create_json(self)
+		append(&results, project_json)
+
+		package_odin_content := strings.concatenate([]string{"package ", self.name})
+
+		package_file := os.write_entire_file(
+			strings.concatenate([]string{self.name, "/", self.name, ".odin"}),
+			transmute([]byte)package_odin_content,
+			true,
+		)
+
+		append(&results, package_file)
+
+		create_pkg_dep_dir := os.make_directory("pkg")
+		append(&results, create_pkg_dep_dir == os.ERROR_NONE)
+
+		git_keep := os.write_entire_file("pkg/.gitkeep", []byte{})
+		append(&results, git_keep)
+
+
+		ols_json := project_create_ols_json()
+		append(&results, ols_json)
+
+		return utils.all_true(results)
+	}
+
 	main_odin_content := `
     package main
     
