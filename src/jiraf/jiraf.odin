@@ -105,6 +105,16 @@ project_create_dirs :: proc(using self: Project) -> bool {
 
 		append(&results, create_tests_dir == os.ERROR_NONE)
 
+		test_odin_content := `
+        import "core:testing"
+
+        @(test)
+        test_true_is_true :: proc(t: ^testing.T) {
+            testing.expect_value(t, true, true)
+        }
+        `
+
+
 		test_file := os.write_entire_file(
 			strings.concatenate([]string{"tests/", self.name, "_test", ".odin"}),
 			transmute([]byte)test_odin_content,
