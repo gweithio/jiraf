@@ -224,6 +224,7 @@ main :: proc() {
 			return
 		} else {
 			fmt.println("Project created")
+			return
 		}
 	}
 
