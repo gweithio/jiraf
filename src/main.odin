@@ -6,6 +6,7 @@ import "core:strings"
 import "shared:jiraf"
 import "core:encoding/json"
 import "core:c/libc"
+import "core:mem"
 
 // Parse values from the args so we have a map[string]string
 get_value_after_slash :: proc(v: string) -> map[string]string {
@@ -23,24 +24,13 @@ get_value_after_slash :: proc(v: string) -> map[string]string {
 	return args_map
 }
 
-// loop through the args and append them to our map
-parse_args :: proc(args: []string) -> [dynamic]map[string]string {
-	parsed_map := [dynamic]map[string]string{}
-
-	for arg in args {
-		append_elem(&parsed_map, get_value_after_slash(arg))
-	}
-
-	return parsed_map
-}
-
 // run the project by calling odin run
 run_project :: proc(project: Project_Data, args: []string) {
 	// Don't really need the command_builder
 
 	arg_string := ""
 	for arg in args {
-		arg_string = strings.concatenate([]string{arg, " "})
+		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
 	}
 
 	run_command := fmt.tprintf(
@@ -49,8 +39,8 @@ run_project :: proc(project: Project_Data, args: []string) {
 		arg_string,
 	)
 
-	fmt.println(strings.concatenate([]string{"Running ", project.name, "..."}))
-	cmd := strings.clone_to_cstring(run_command)
+	fmt.println("Running ", project.name, "...")
+	cmd := strings.clone_to_cstring(run_command, context.temp_allocator)
 	libc.system(cmd)
 }
 
@@ -59,7 +49,7 @@ build_project :: proc(project: Project_Data, args: []string) {
 
 	arg_string := ""
 	for arg in args {
-		arg_string = strings.concatenate([]string{arg, " "})
+		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
 	}
 
 	// Don't really need the command_builder
@@ -70,7 +60,7 @@ build_project :: proc(project: Project_Data, args: []string) {
 	)
 
 	fmt.println("Building", project.name, "...")
-	cmd := strings.clone_to_cstring(build_command)
+	cmd := strings.clone_to_cstring(build_command, context.temp_allocator)
 	libc.system(cmd)
 }
 
@@ -79,7 +69,7 @@ run_tests :: proc(project: Project_Data, args: []string) {
 
 	arg_string := ""
 	for arg, i in args {
-		arg_string = strings.concatenate([]string{arg, " "})
+		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
 	}
 
 	test_command := fmt.tprintf(
@@ -99,9 +89,12 @@ get_dep :: proc(project: Project_Data, url: string) {
 	}
 
 	curr_dir := os.get_current_directory()
+	defer delete(curr_dir)
+
 	pkg_dir := fmt.tprintf("%s/pkg", curr_dir)
 
 	err := os.set_current_directory(pkg_dir)
+
 
 	if err != os.ERROR_NONE {
 		fmt.eprintln("Failed to swap to pkg directory")
@@ -109,7 +102,8 @@ get_dep :: proc(project: Project_Data, url: string) {
 	}
 
 	get_command := fmt.tprintf("git clone %s", url)
-	cmd := strings.clone_to_cstring(get_command)
+
+	cmd := strings.clone_to_cstring(get_command, context.temp_allocator)
 	fmt.println(cmd)
 	libc.system(cmd)
 }
@@ -135,9 +129,15 @@ Project_Data :: struct {
 }
 
 get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
-	content := os.read_entire_file("project.json") or_return
+	content := os.read_entire_file("project.json", context.temp_allocator) or_return
 
-	parsed, err := json.parse(content)
+	parsed, err := json.parse(
+		content,
+		json.DEFAULT_SPECIFICATION,
+		false,
+		context.temp_allocator,
+	)
+
 	if err != nil do return
 
 	json_data := parsed.(json.Object) or_return
@@ -182,9 +182,23 @@ print_help :: proc() {
     `)
 }
 
+// loop through the args and append them to our map
+parse_args :: proc(args: []string) -> [dynamic]map[string]string {
+	parsed_map := [dynamic]map[string]string{}
+	value := make(map[string]string)
+
+	for arg in args {
+		value = get_value_after_slash(arg)
+		append(&parsed_map, value)
+	}
+
+	return parsed_map
+}
+
 create_project :: proc(args: []string) -> bool {
 	parsed_args := parse_args(args)
-	parsed_map := make(map[string]string)
+
+	parsed_map := make(map[string]string, len(args), context.temp_allocator)
 
 	for m, _ in parsed_args {
 		for k, v in m {
@@ -193,36 +207,44 @@ create_project :: proc(args: []string) -> bool {
 	}
 
 
+	fmt.println(parsed_map)
 	// strip whitespace from the name
 	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
 
 	if parsed_map["name"] == "" && !is_a_command(args[0]) {
 		fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)
 		fmt.eprintln(`Provide a type for your project, like -type:exe or -type:lib`)
+		delete(parsed_args)
+		delete(new_name)
 		return false
 	}
 
+	new_name = strings.to_lower(new_name)
 
 	// create our project
 	new_project, ok := jiraf.project_create(
-		name = strings.to_lower(new_name),
+		name = new_name,
 		type = parsed_map["type"],
 		author = parsed_map["author"],
 		version = parsed_map["version"],
 		description = parsed_map["desc"],
-		dependencies = make(map[string]string),
+		dependencies = map[string]string{},
 	)
 
 	if ok {
 		fmt.printf("%s has been created\n", new_name)
+		delete(parsed_args)
+		delete(new_name)
 		return true
 	} else {
 		fmt.eprintf("Failed to create project %s\n", new_name)
+		delete(parsed_args)
+		delete(new_name)
 		return false
 	}
 }
 
-main :: proc() {
+_main :: proc() {
 
 	args := os.args[1:]
 
@@ -251,7 +273,7 @@ main :: proc() {
 
 		switch (args[0]) {
 		case "version":
-			fmt.println("0.3.3")
+			fmt.println(project_json.version)
 		case "run":
 			run_project(project_json, args[1:])
 			return
@@ -274,5 +296,20 @@ main :: proc() {
 		return
 	} else {
 		return
+	}
+}
+
+main :: proc() {
+	track: mem.Tracking_Allocator
+	mem.tracking_allocator_init(&track, context.allocator)
+	context.allocator = mem.tracking_allocator(&track)
+
+	_main()
+
+	for _, leak in track.allocation_map {
+		fmt.printf("%v leaked %v bytes\n", leak.location, leak.size)
+	}
+	for bad_free in track.bad_free_array {
+		fmt.printf("%v allocation %p was freed badly\n", bad_free.location, bad_free.memory)
 	}
 }
