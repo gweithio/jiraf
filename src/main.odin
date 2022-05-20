@@ -26,6 +26,7 @@ get_value_after_slash :: proc(v: string) -> (key, val: string) {
 			break
 		}
 	}
+	return
 }
 
 // loop through the args and append them to our map
@@ -34,6 +35,7 @@ parse_args :: proc(args: []string) -> (res: map[string]string) {
 		key, val := get_value_after_slash(arg)
 		res[key] = val
 	}
+	return
 }
 
 // run the project by calling odin run
