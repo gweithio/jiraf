@@ -78,7 +78,7 @@ build_project :: proc(project: Project_Data, args: []string) {
 run_tests :: proc(project: Project_Data, args: []string) {
 
 	arg_string := ""
-	for arg in args {
+	for arg, i in args {
 		arg_string = strings.concatenate([]string{arg, " "})
 	}
 
@@ -182,14 +182,61 @@ print_help :: proc() {
     `)
 }
 
+create_project :: proc(args: []string) -> bool {
+	parsed_args := parse_args(args)
+	parsed_map := make(map[string]string)
+
+	for m, _ in parsed_args {
+		for k, v in m {
+			parsed_map[k] = v
+		}
+	}
+
+
+	// strip whitespace from the name
+	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
+
+	if parsed_map["name"] == "" && !is_a_command(args[0]) {
+		fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)
+		fmt.eprintln(`Provide a type for your project, like -type:exe or -type:lib`)
+		return false
+	}
+
+
+	// create our project
+	new_project, ok := jiraf.project_create(
+		name = strings.to_lower(new_name),
+		type = parsed_map["type"],
+		author = parsed_map["author"],
+		version = parsed_map["version"],
+		description = parsed_map["desc"],
+		dependencies = make(map[string]string),
+	)
+
+	if ok {
+		fmt.printf("%s has been created\n", new_name)
+		return true
+	} else {
+		fmt.eprintf("Failed to create project %s\n", new_name)
+		return false
+	}
+}
 
 main :: proc() {
 
 	args := os.args[1:]
 
-	if len(os.args) <= 1 || !is_a_command(args[0]) {
+	if len(args) == 0 {
 		print_help()
 		return
+	}
+
+	if args[0] == "new" {
+		create_ok := create_project(args)
+		if !create_ok {
+			fmt.println("Failed to create project")
+			return
+		}
 	}
 
 	if len(args) >= 0 && is_a_command(args[0]) {
@@ -202,16 +249,15 @@ main :: proc() {
 			args_for_command = args[2:]
 		}
 
-		// Get all args other than the current filename
 		switch (args[0]) {
 		case "run":
-			run_project(project_json, args_for_command)
+			run_project(project_json, args[1:])
 			return
 		case "build":
-			build_project(project_json, args_for_command)
+			build_project(project_json, args[1:])
 			return
 		case "test":
-			run_tests(project_json, args_for_command)
+			run_tests(project_json, args[1:])
 			return
 		case "get":
 			if len(args) < 2 {
@@ -220,54 +266,12 @@ main :: proc() {
 			}
 			get_dep(project_json, args[1])
 			return
-		}
 
-		return
+		}
 	} else if args[0] == "-help" || args[0] == "-h" || args[0] == "help" {
 		print_help()
 		return
 	} else {
 		return
-	}
-
-	if args[0] == "new" {
-		parsed_args := parse_args(args)
-		parsed_map := make(map[string]string)
-
-		for m, _ in parsed_args {
-			for k, v in m {
-				parsed_map[k] = v
-			}
-		}
-
-		// strip whitespace from the name
-		new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
-
-		if parsed_map["name"] == "" && !is_a_command(args[0]) {
-			fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)
-			fmt.eprintln(`Provide a type for your project, like -type:exe or -type:lib`)
-			return
-		}
-
-
-		// create our project
-		new_project, ok := jiraf.project_create(
-			name = strings.to_lower(new_name),
-			type = parsed_map["type"],
-			author = parsed_map["author"],
-			version = parsed_map["version"],
-			description = parsed_map["desc"],
-			dependencies = make(map[string]string),
-		)
-
-		if ok {
-			fmt.printf("%s has been created\n", new_name)
-			return
-		}
-
-		if !ok {
-			fmt.eprintf("Failed to create project %s\n", new_name)
-		}
-
 	}
 }
