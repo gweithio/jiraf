@@ -6,6 +6,7 @@ import "core:strings"
 import "shared:jiraf"
 import "core:encoding/json"
 import "core:c/libc"
+
 import "pkg:args_parser/args_parser"
 
 // run the project by calling odin run
@@ -24,13 +25,13 @@ run_project :: proc(project: Project_Data, args: []string) {
 
 	run_command := fmt.tprintf(
 		"odin run src/main.odin -file -out:%s %s -collection:shared=%s -collection:pkg=pkg",
-		strings.to_lower(project.name),
+		strings.to_lower(project.name, context.temp_allocator),
 		arg_string,
 		shared_location,
 	)
 
 	fmt.println(strings.concatenate([]string{"Running ", project.name, "..."}))
-	cmd := strings.clone_to_cstring(run_command)
+	cmd := strings.clone_to_cstring(run_command, context.temp_allocator)
 	libc.system(cmd)
 }
 
@@ -39,7 +40,12 @@ build_project :: proc(project: Project_Data, args: []string) {
 
 	arg_string := ""
 	for arg in args {
-		arg_string = strings.concatenate([]string{arg, " "})
+		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
+	}
+
+	shared_location := "src"
+	if project.type == Project_Type.Lib {
+		shared_location = "."
 	}
 
 	shared_location := "src"
@@ -50,13 +56,13 @@ build_project :: proc(project: Project_Data, args: []string) {
 	// Don't really need the command_builder
 	build_command := fmt.tprintf(
 		"odin build src -out:%s %s -collection:shared=%s -collection:pkg=pkg",
-		strings.to_lower(project.name),
+		strings.to_lower(project.name, context.temp_allocator),
 		arg_string,
 		shared_location,
 	)
 
 	fmt.println("Building", project.name, "...")
-	cmd := strings.clone_to_cstring(build_command)
+	cmd := strings.clone_to_cstring(build_command, context.temp_allocator)
 	libc.system(cmd)
 }
 
@@ -80,7 +86,7 @@ run_tests :: proc(project: Project_Data, args: []string) {
 	)
 
 	fmt.println("Running Tests...")
-	cmd := strings.clone_to_cstring(test_command)
+	cmd := strings.clone_to_cstring(test_command, context.temp_allocator)
 	libc.system(cmd)
 }
 
@@ -91,6 +97,8 @@ get_dep :: proc(project: Project_Data, url: string) {
 	}
 
 	curr_dir := os.get_current_directory()
+	defer delete(curr_dir)
+
 	pkg_dir := fmt.tprintf("%s/pkg", curr_dir)
 
 	err := os.set_current_directory(pkg_dir)
@@ -101,8 +109,7 @@ get_dep :: proc(project: Project_Data, url: string) {
 	}
 
 	get_command := fmt.tprintf("git clone %s", url)
-	cmd := strings.clone_to_cstring(get_command)
-	fmt.println(cmd)
+	cmd := strings.clone_to_cstring(get_command, context.temp_allocator)
 	libc.system(cmd)
 }
 
@@ -127,10 +134,14 @@ Project_Data :: struct {
 }
 
 get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
-	content := os.read_entire_file("project.json") or_return
+	content := os.read_entire_file("project.json", context.temp_allocator) or_return
 
-	parsed, err := json.parse(content)
-	if err != nil do return
+	parsed, _ := json.parse(
+		content,
+		json.DEFAULT_SPECIFICATION,
+		false,
+		context.temp_allocator,
+	)
 
 	json_data := parsed.(json.Object) or_return
 
@@ -185,25 +196,21 @@ create_project :: proc(args: []string) -> bool {
 	}
 
 	// strip whitespace from the name
-	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
+	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_", context.temp_allocator)
+
+	deps := make(map[string]string, 0, context.temp_allocator)
 
 	// create our project
 	new_project, ok := jiraf.project_create(
-		name = strings.to_lower(new_name),
+		name = strings.to_lower(new_name, context.temp_allocator),
 		type = parsed_map["type"],
 		author = parsed_map["author"],
 		version = parsed_map["version"],
 		description = parsed_map["desc"],
-		dependencies = make(map[string]string),
+		dependencies = deps,
 	)
 
-	if ok {
-		fmt.printf("%s has been created\n", new_name)
-		return true
-	} else {
-		fmt.eprintf("Failed to create project %s\n", new_name)
-		return false
-	}
+	return ok
 }
 
 main :: proc() {
@@ -220,6 +227,8 @@ main :: proc() {
 		if !create_ok {
 			fmt.println("Failed to create project")
 			return
+		} else {
+			fmt.println("Project created")
 		}
 	}
 
