@@ -6,38 +6,8 @@ import "core:strings"
 import "shared:jiraf"
 import "core:encoding/json"
 import "core:c/libc"
-import "core:mem"
 
-// Parse values from the args into key, val pairs
-get_value_after_slash :: proc(v: string) -> (key, val: string) {
-	index := strings.index(v, ":")
-
-	if index != -1 {
-		key = v[:index]
-		val = v[index + 1:]
-	} else {
-		// No ':' found, return a key with an empty value
-		key = v
-	}
-
-	// Strip leading dashes from key
-	for r, i in key {
-		if r != '-' {
-			key = key[i:]
-			break
-		}
-	}
-	return
-}
-
-// loop through the args and append them to our map
-parse_args :: proc(args: []string) -> (res: map[string]string) {
-	for arg in args {
-		key, val := get_value_after_slash(arg)
-		res[key] = val
-	}
-	return
-}
+import "pkg:args_parser/args_parser"
 
 // run the project by calling odin run
 run_project :: proc(project: Project_Data, args: []string) {
@@ -71,6 +41,11 @@ build_project :: proc(project: Project_Data, args: []string) {
 	arg_string := ""
 	for arg in args {
 		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
+	}
+
+	shared_location := "src"
+	if project.type == Project_Type.Lib {
+		shared_location = "."
 	}
 
 	shared_location := "src"
@@ -211,7 +186,7 @@ print_help :: proc() {
 }
 
 create_project :: proc(args: []string) -> bool {
-	parsed_map := parse_args(args)
+	parsed_map := args_parser.parse_args(args)
 	defer delete(parsed_map)
 
 	if parsed_map["name"] == "" && !is_a_command(args[0]) {
