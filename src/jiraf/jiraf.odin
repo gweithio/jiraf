@@ -101,6 +101,18 @@ project_create_dirs :: proc(using self: Project) -> bool {
 		git_keep := os.write_entire_file("pkg/.gitkeep", []byte{})
 		append(&results, git_keep)
 
+		create_tests_dir := os.make_directory("tests")
+
+		append(&results, create_tests_dir == os.ERROR_NONE)
+
+		test_file := os.write_entire_file(
+			strings.concatenate([]string{"tests/", self.name, "_test", ".odin"}),
+			transmute([]byte)test_odin_content,
+			true,
+		)
+
+		append(&results, test_file)
+
 
 		ols_json := project_create_ols_json()
 		append(&results, ols_json)
