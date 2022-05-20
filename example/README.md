@@ -16,6 +16,6 @@ project.json
 ## Test Directory
 + tests/example_project_test.odin
 
-## Vendor Directory
-+ vendor/.gitignore
+## Packages Directory
++ pkg/.gitignore
 
