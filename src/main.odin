@@ -7,31 +7,33 @@ import "shared:jiraf"
 import "core:encoding/json"
 import "core:c/libc"
 
-// Parse values from the args so we have a map[string]string
-get_value_after_slash :: proc(v: string) -> map[string]string {
-	args_map := make(map[string]string)
-
+// Parse values from the args into key, val pairs
+get_value_after_slash :: proc(v: string) -> (key, val: string) {
 	index := strings.index(v, ":")
 
-	v1, _ := strings.remove_all(v, ":")
-	v2, _ := strings.remove_all(v1, "-")
-
 	if index != -1 {
-		args_map[v2[:index - 1]] = v2[index - 1:]
+		key = v[:index]
+		val = v[index + 1:]
+	} else {
+		// No ':' found, return a key with an empty value
+		key = v
 	}
 
-	return args_map
+	// Strip leading dashes from key
+	for r, i in key {
+		if r != '-' {
+			key = key[i:]
+			break
+		}
+	}
 }
 
 // loop through the args and append them to our map
-parse_args :: proc(args: []string) -> [dynamic]map[string]string {
-	parsed_map := [dynamic]map[string]string{}
-
+parse_args :: proc(args: []string) -> (res: map[string]string) {
 	for arg in args {
-		append_elem(&parsed_map, get_value_after_slash(arg))
+		key, val := get_value_after_slash(arg)
+		res[key] = val
 	}
-
-	return parsed_map
 }
 
 // run the project by calling odin run
@@ -183,18 +185,8 @@ print_help :: proc() {
 }
 
 create_project :: proc(args: []string) -> bool {
-	parsed_args := parse_args(args)
-	parsed_map := make(map[string]string)
-
-	for m, _ in parsed_args {
-		for k, v in m {
-			parsed_map[k] = v
-		}
-	}
-
-
-	// strip whitespace from the name
-	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
+	parsed_map := parse_args(args)
+	defer delete(parsed_map)
 
 	if parsed_map["name"] == "" && !is_a_command(args[0]) {
 		fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)
@@ -202,6 +194,8 @@ create_project :: proc(args: []string) -> bool {
 		return false
 	}
 
+	// strip whitespace from the name
+	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
 
 	// create our project
 	new_project, ok := jiraf.project_create(
