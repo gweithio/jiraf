@@ -8,20 +8,36 @@ import "core:encoding/json"
 import "core:c/libc"
 import "core:mem"
 
-// Parse values from the args so we have a map[string]string
-get_value_after_slash :: proc(v: string) -> map[string]string {
-	args_map := make(map[string]string)
-
+// Parse values from the args into key, val pairs
+get_value_after_slash :: proc(v: string) -> (key, val: string) {
 	index := strings.index(v, ":")
 
-	v1, _ := strings.remove_all(v, ":")
-	v2, _ := strings.remove_all(v1, "-")
-
 	if index != -1 {
-		args_map[v2[:index - 1]] = v2[index - 1:]
+		key = v[:index]
+		val = v[index + 1:]
+	} else {
+		// No ':' found, return a key with an empty value
+		key = v
 	}
 
-	return args_map
+	// Strip leading dashes from key
+	for r, i in key {
+		if r != '-' {
+			key = key[i:]
+			break
+		}
+	}
+	return
+}
+
+// loop through the args and append them to our map
+parse_args :: proc(args: []string) -> (res: map[string]string) {
+	for arg in args {
+		key, val := get_value_after_slash(arg)
+		res[key] = val
+	}
+
+	return res
 }
 
 // run the project by calling odin run
@@ -109,11 +125,13 @@ get_dep :: proc(project: Project_Data, url: string) {
 }
 
 // Check if the given parameter is a command
-is_a_command :: proc(cmd: string) -> bool {
+is_a_command :: proc(cmd: string) -> (ok: bool) {
 	if cmd == "run" || cmd == "test" || cmd == "build" || cmd == "get" || cmd == "version" {
-		return true
+		ok = true
+		return
 	}
-	return false
+	ok = true
+	return
 }
 
 // Possible project types
@@ -128,8 +146,8 @@ Project_Data :: struct {
 	type:                  Project_Type,
 }
 
-get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
-	content := os.read_entire_file("project.json", context.temp_allocator) or_return
+get_project_from_json :: proc() -> (Project_Data, bool) {
+	content, ok := os.read_entire_file("project.json", context.temp_allocator)
 
 	parsed, err := json.parse(
 		content,
@@ -138,15 +156,17 @@ get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
 		context.temp_allocator,
 	)
 
-	if err != nil do return
+	if err != json.Error.None {
+		return {}, false
+	}
 
-	json_data := parsed.(json.Object) or_return
+	json_data := parsed.(json.Object)
 
 	name, type, author, version: string
-	name = json_data["name"].(json.String) or_return
-	type = json_data["type"].(json.String) or_return
-	author = json_data["author"].(json.String) or_return
-	version = json_data["version"].(json.String) or_return
+	name = json_data["name"].(json.String)
+	type = json_data["type"].(json.String)
+	author = json_data["author"].(json.String)
+	version = json_data["version"].(json.String)
 
 
 	ty: Project_Type
@@ -156,7 +176,7 @@ get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
 	case "lib":
 		ty = .Lib
 	case:
-		return
+		return {}, false
 	}
 
 	return {name = name, type = ty, author = author, version = version}, true
@@ -182,47 +202,21 @@ print_help :: proc() {
     `)
 }
 
-// loop through the args and append them to our map
-parse_args :: proc(args: []string) -> [dynamic]map[string]string {
-	parsed_map := [dynamic]map[string]string{}
-	value := make(map[string]string)
-
-	for arg in args {
-		value = get_value_after_slash(arg)
-		append(&parsed_map, value)
-	}
-
-	return parsed_map
-}
-
-create_project :: proc(args: []string) -> bool {
-	parsed_args := parse_args(args)
-
-	parsed_map := make(map[string]string, len(args), context.temp_allocator)
-
-	for m, _ in parsed_args {
-		for k, v in m {
-			parsed_map[k] = v
-		}
-	}
-
-
-	fmt.println(parsed_map)
-	// strip whitespace from the name
-	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
+create_project :: proc(args: []string) -> (ok: bool) {
+	parsed_map := parse_args(args)
+	defer delete(parsed_map)
 
 	if parsed_map["name"] == "" && !is_a_command(args[0]) {
 		fmt.eprintln(`Provide a name for your project, like -name:"My Cool Project"`)
 		fmt.eprintln(`Provide a type for your project, like -type:exe or -type:lib`)
-		delete(parsed_args)
-		delete(new_name)
 		return false
 	}
 
-	new_name = strings.to_lower(new_name)
+	// strip whitespace from the name
+	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_")
 
 	// create our project
-	new_project, ok := jiraf.project_create(
+	new_project, res := jiraf.project_create(
 		name = new_name,
 		type = parsed_map["type"],
 		author = parsed_map["author"],
@@ -230,17 +224,14 @@ create_project :: proc(args: []string) -> bool {
 		description = parsed_map["desc"],
 		dependencies = map[string]string{},
 	)
+	ok = res
 
 	if ok {
 		fmt.printf("%s has been created\n", new_name)
-		delete(parsed_args)
-		delete(new_name)
-		return true
+		return
 	} else {
 		fmt.eprintf("Failed to create project %s\n", new_name)
-		delete(parsed_args)
-		delete(new_name)
-		return false
+		return
 	}
 }
 
@@ -254,8 +245,8 @@ _main :: proc() {
 	}
 
 	if args[0] == "new" {
-		create_ok := create_project(args)
-		if !create_ok {
+		ok := create_project(args)
+		if !ok {
 			fmt.println("Failed to create project")
 			return
 		}
