@@ -251,7 +251,7 @@ main :: proc() {
 
 		switch (args[0]) {
 		case "version":
-			fmt.println(project_json.version)
+			fmt.println("0.3.3")
 		case "run":
 			run_project(project_json, args[1:])
 			return
