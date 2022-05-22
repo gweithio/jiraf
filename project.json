@@ -6,5 +6,6 @@
     "description": "A basic project builder for odin", 
     "dependencies": {
         "args_parser": {"url": "github.com/gweithio/args_parser", "version": ">=0.1"}
-    }
+    },
+    "artifacts_made": true
 }

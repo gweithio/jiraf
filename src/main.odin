@@ -9,6 +9,34 @@ import "core:c/libc"
 
 import "pkg:args_parser/args_parser"
 
+// Create our .build directory which will contain specific artifacts
+make_hidden_build :: proc(project: Project_Data) -> (ok: bool) {
+	if err := os.make_directory(".build"); err != os.ERROR_NONE {
+		return false
+	}
+
+	type := Project_Type.Exe
+
+	if project.type == .Lib {
+		type = Project_Type.Exe
+	}
+
+	new_project_json := Project_Data {
+		name           = project.name,
+		author         = project.author,
+		version        = project.version,
+		artifacts_made = true,
+	}
+
+	result, _ := json.marshal(new_project_json, context.temp_allocator)
+
+	os.remove("project.json") or_return
+
+	os.write_entire_file("project.json", result)
+
+	return true
+}
+
 // run the project by calling odin run
 run_project :: proc(project: Project_Data, args: []string) {
 	// Don't really need the command_builder
@@ -85,6 +113,15 @@ run_tests :: proc(project: Project_Data, args: []string) {
 	libc.system(cmd)
 }
 
+check_deps_installed :: proc() -> []string {
+	data, ok := get_project_from_json()
+	// Get contents of pkg, if name in deps doesn't match with dep in pkg
+	// call get_dep on each
+
+	return {}
+
+}
+
 get_dep :: proc(project: Project_Data, url: string) {
 	if url == "" {
 		fmt.eprintln("please provide a github url")
@@ -126,6 +163,8 @@ Project_Type :: enum {
 Project_Data :: struct {
 	name, author, version: string,
 	type:                  Project_Type,
+	dep:                   map[string]jiraf.Dependency,
+	artifacts_made:        bool,
 }
 
 get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
@@ -141,11 +180,15 @@ get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
 	json_data := parsed.(json.Object) or_return
 
 	name, type, author, version: string
+	artifacts_made: bool
+	deps: map[string]jiraf.Dependency
+
 	name = json_data["name"].(json.String) or_return
 	type = json_data["type"].(json.String) or_return
 	author = json_data["author"].(json.String) or_return
 	version = json_data["version"].(json.String) or_return
-
+	artifacts_made = json_data["artifacts_made"].(json.Boolean) or_return
+	deps = json_data["dependencies"].(json.Object) or_return
 
 	ty: Project_Type
 	switch type {
@@ -157,7 +200,13 @@ get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
 		return
 	}
 
-	return {name = name, type = ty, author = author, version = version}, true
+	return {
+		name = name,
+		type = ty,
+		author = author,
+		version = version,
+		artifacts_made = artifacts_made,
+	}, true
 }
 
 print_help :: proc() {
@@ -193,8 +242,6 @@ create_project :: proc(args: []string) -> bool {
 	// strip whitespace from the name
 	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_", context.temp_allocator)
 
-	deps := make(map[string]string, 0, context.temp_allocator)
-
 	// create our project
 	new_project, ok := jiraf.project_create(
 		name = strings.to_lower(new_name, context.temp_allocator),
@@ -202,7 +249,7 @@ create_project :: proc(args: []string) -> bool {
 		author = parsed_map["author"],
 		version = parsed_map["version"],
 		description = parsed_map["desc"],
-		dependencies = deps,
+		artifacts_made = false,
 	)
 
 	return ok
@@ -230,7 +277,20 @@ main :: proc() {
 
 	if len(args) >= 0 && is_a_command(args[0]) {
 		project_json, ok := get_project_from_json()
-		if !ok do return
+
+		if !ok {
+			fmt.eprintln("Failed to get project json")
+			return
+		}
+
+		if !project_json.artifacts_made {
+			hidden_ok := make_hidden_build(project_json)
+
+			if !hidden_ok {
+				fmt.eprintln("Failed to create .build")
+				return
+			}
+		}
 
 		args_for_command := []string{}
 

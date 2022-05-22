@@ -11,13 +11,24 @@ DEFAULT_AUTHOR :: "TODO: PROJECT AUTHOR"
 DEFAULT_VERSION :: "TODO: PROJECT VERSION"
 DEFAULT_DESC :: "TODO: PROJECT DESCRIPTION"
 
+Dependency :: struct {
+	url:     string,
+	version: string,
+}
+
+Dependencies :: struct {
+	name: string,
+	dep:  Dependency,
+}
+
 Project :: struct {
-	name:         string,
-	type:         string,
-	author:       string,
-	version:      string,
-	description:  string,
-	dependencies: map[string]string,
+	name:           string,
+	type:           string,
+	author:         string,
+	version:        string,
+	description:    string,
+	dependencies:   map[string]Dependency,
+	artifacts_made: bool,
 }
 
 
@@ -255,7 +266,7 @@ project_create :: proc(
 	author,
 	version,
 	description: string,
-	dependencies: map[string]string,
+	artifacts_made := false,
 ) -> (
 	Project,
 	bool,
@@ -269,16 +280,25 @@ project_create :: proc(
 	if version == "" do new_version = DEFAULT_VERSION
 	if description == "" do new_desc = DEFAULT_DESC
 
-	project := Project {
-		name         = name,
-		type         = type,
-		author       = new_author,
-		version      = new_version,
-		description  = new_desc,
-		dependencies = dependencies,
+	// temp_allocator no need to delete
+	plain_dep := make(map[string]Dependency, 1, context.temp_allocator)
+
+	deps := []Dependencies{{name = "dep1", dep = {url = "url1", version = "0.1"}}}
+
+	// Build our plain_dep array to just fill in the data for now
+	for dep in deps {
+		plain_dep[dep.name] = dep.dep
 	}
 
-	defer delete(dependencies)
+	project := Project {
+		name           = name,
+		type           = type,
+		author         = new_author,
+		version        = new_version,
+		description    = new_desc,
+		dependencies   = plain_dep,
+		artifacts_made = artifacts_made,
+	}
 
 	result := project_create_dirs(project)
 
