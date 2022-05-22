@@ -11,7 +11,7 @@ import "core:mem"
 
 import "pkg:args_parser/args_parser"
 
-MEM_TRACK :: false
+MEM_TRACK :: true
 
 // run the project by calling odin run
 run_project :: proc(project: Project_Data, args: []string) {
