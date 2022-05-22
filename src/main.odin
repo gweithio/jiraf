@@ -193,8 +193,6 @@ create_project :: proc(args: []string) -> bool {
 	// strip whitespace from the name
 	new_name, _ := strings.replace_all(parsed_map["name"], " ", "_", context.temp_allocator)
 
-	deps := make(map[string]string, 0, context.temp_allocator)
-
 	// create our project
 	new_project, ok := jiraf.project_create(
 		name = strings.to_lower(new_name, context.temp_allocator),
@@ -202,7 +200,6 @@ create_project :: proc(args: []string) -> bool {
 		author = parsed_map["author"],
 		version = parsed_map["version"],
 		description = parsed_map["desc"],
-		dependencies = deps,
 	)
 
 	return ok
