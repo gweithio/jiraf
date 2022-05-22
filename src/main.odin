@@ -12,17 +12,21 @@ import "pkg:args_parser/args_parser"
 
 // run the project by calling odin run
 run_project :: proc(project: Project_Data, args: []string) {
-	// Don't really need the command_builder
+	b := strings.make_builder(context.temp_allocator)
+	defer strings.destroy_builder(&b)
 
-	arg_string := ""
 	for arg in args {
-		arg_string = strings.concatenate([]string{arg, " "})
+		strings.write_string(&b, arg)
+		strings.write_string(&b, " ")
 	}
+
+	arg_string := strings.to_string(b)
 
 	shared_location := "src"
 	if project.type == Project_Type.Lib {
 		shared_location = "."
 	}
+
 
 	run_command := fmt.tprintf(
 		"odin run src/main.odin -file -out:%s %s -collection:shared=%s -collection:pkg=pkg",
@@ -39,10 +43,15 @@ run_project :: proc(project: Project_Data, args: []string) {
 // build the project by calling odin build
 build_project :: proc(project: Project_Data, args: []string) {
 
-	arg_string := ""
+	b := strings.make_builder(context.temp_allocator)
+	defer strings.destroy_builder(&b)
+
 	for arg in args {
-		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
+		strings.write_string(&b, arg)
+		strings.write_string(&b, " ")
 	}
+
+	arg_string := strings.to_string(b)
 
 	shared_location := "src"
 	if project.type == Project_Type.Lib {
@@ -65,10 +74,16 @@ build_project :: proc(project: Project_Data, args: []string) {
 // Run tests by calling odin test
 run_tests :: proc(project: Project_Data, args: []string) {
 
-	arg_string := ""
-	for arg, i in args {
-		arg_string = strings.concatenate([]string{arg, " "})
+	b := strings.make_builder(context.temp_allocator)
+	defer strings.destroy_builder(&b)
+
+	for arg in args {
+		strings.write_string(&b, arg)
+		strings.write_string(&b, " ")
 	}
+
+	arg_string := strings.to_string(b)
+
 
 	shared_location := "src"
 	if project.type == Project_Type.Lib {
