@@ -6,8 +6,12 @@ import "core:strings"
 import "shared:jiraf"
 import "core:encoding/json"
 import "core:c/libc"
+import "core:path/filepath"
+import "core:mem"
 
 import "pkg:args_parser/args_parser"
+
+MEM_TRACK :: false
 
 // run the project by calling odin run
 run_project :: proc(project: Project_Data, args: []string) {
@@ -30,7 +34,10 @@ run_project :: proc(project: Project_Data, args: []string) {
 		shared_location,
 	)
 
-	fmt.println(strings.concatenate([]string{"Running ", project.name, "..."}))
+	fmt.println(strings.concatenate(
+			[]string{"Running ", project.name, "..."},
+			context.temp_allocator,
+		))
 	cmd := strings.clone_to_cstring(run_command, context.temp_allocator)
 	libc.system(cmd)
 }
@@ -66,7 +73,7 @@ run_tests :: proc(project: Project_Data, args: []string) {
 
 	arg_string := ""
 	for arg, i in args {
-		arg_string = strings.concatenate([]string{arg, " "})
+		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
 	}
 
 	shared_location := "src"
@@ -206,7 +213,7 @@ create_project :: proc(args: []string) -> bool {
 	return ok
 }
 
-main :: proc() {
+_main :: proc() {
 
 	args := os.args[1:]
 
@@ -262,4 +269,22 @@ main :: proc() {
 	} else {
 		return
 	}
+}
+
+main :: proc() {
+	when MEM_TRACK {
+		track: mem.Tracking_Allocator
+		mem.tracking_allocator_init(&track, context.allocator)
+		context.allocator = mem.tracking_allocator(&track)
+	}
+	_main()
+	when MEM_TRACK {
+		for _, leak in track.allocation_map {
+			fmt.printf("%v leaked %v bytes\n", leak.location, leak.size)
+		}
+		for bad_free in track.bad_free_array {
+			fmt.printf("%v allocation %p was freed badly\n", bad_free.location, bad_free.memory)
+		}
+	}
+
 }
