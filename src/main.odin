@@ -6,6 +6,7 @@ import "core:strings"
 import "shared:jiraf"
 import "core:encoding/json"
 import "core:c/libc"
+import "core:path/filepath"
 
 import "pkg:args_parser/args_parser"
 
@@ -94,7 +95,8 @@ get_dep :: proc(project: Project_Data, url: string) {
 	curr_dir := os.get_current_directory()
 	defer delete(curr_dir)
 
-	pkg_dir := fmt.tprintf("%s/pkg", curr_dir)
+	pkg_dir := filepath.join(curr_dir, "/pkg")
+	defer delete(pkg_dir)
 
 	err := os.set_current_directory(pkg_dir)
 
@@ -110,10 +112,12 @@ get_dep :: proc(project: Project_Data, url: string) {
 
 // Check if the given parameter is a command
 is_a_command :: proc(cmd: string) -> bool {
-	if cmd == "run" || cmd == "test" || cmd == "build" || cmd == "get" || cmd == "version" {
+	switch cmd {
+	case "run", "test", "build", "get", "version":
 		return true
+	case:
+		return false
 	}
-	return false
 }
 
 // Possible project types
