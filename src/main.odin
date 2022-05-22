@@ -116,7 +116,7 @@ get_dep :: proc(project: Project_Data, url: string) {
 	curr_dir := os.get_current_directory()
 	defer delete(curr_dir)
 
-	pkg_dir := filepath.join(curr_dir, "/pkg")
+	pkg_dir := filepath.join({curr_dir, "/pkg"}, context.temp_allocator)
 	defer delete(pkg_dir)
 
 	err := os.set_current_directory(pkg_dir)
