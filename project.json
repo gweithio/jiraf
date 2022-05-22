@@ -1,10 +1,13 @@
 {
-    "name": "Jiraf", 
-    "type": "exe", 
-    "author": "Ethan Morgan <ethan@pmor.app>", 
-    "version": "0.3.2", 
-    "description": "A basic project builder for odin", 
+    "name": "Jiraf",
+    "type": "exe",
+    "author": "Ethan Morgan <ethan@pmor.app>",
+    "version": "0.3.2",
+    "description": "A basic project builder for odin",
     "dependencies": {
-        "args_parser": {"url": "github.com/gweithio/args_parser", "version": ">=0.1"}
+        "args_parser": {
+            "url": "github.com/gweithio/args_parser",
+            "version": ">=0.1"
+        }
     }
 }

@@ -126,6 +126,7 @@ Project_Type :: enum {
 Project_Data :: struct {
 	name, author, version: string,
 	type:                  Project_Type,
+	dep:                   map[string]jiraf.Dependency,
 }
 
 get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {

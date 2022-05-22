@@ -11,8 +11,14 @@ DEFAULT_AUTHOR :: "TODO: PROJECT AUTHOR"
 DEFAULT_VERSION :: "TODO: PROJECT VERSION"
 DEFAULT_DESC :: "TODO: PROJECT DESCRIPTION"
 
+Dependency :: struct {
+	url:     string,
+	version: string,
+}
+
 Dependencies :: struct {
-	dependencies: map[string]string,
+	name: string,
+	dep:  Dependency,
 }
 
 Project :: struct {
@@ -21,7 +27,7 @@ Project :: struct {
 	author:       string,
 	version:      string,
 	description:  string,
-	dependencies: []Dependencies,
+	dependencies: map[string]Dependency,
 }
 
 Collections :: struct {
@@ -45,7 +51,7 @@ project_create_ols_json :: proc() -> bool {
 	current_dir := os.get_current_directory()
 
 	default_collections := []Collections{
-		{name = "core", path = "path t odin core"},
+		{name = "core", path = "path to odin core"},
 		{name = "shared", path = fmt.tprintf("%s/src", current_dir)},
 	}
 
@@ -270,8 +276,13 @@ project_create :: proc(name, type, author, version, description: string) -> (
 	if version == "" do new_version = DEFAULT_VERSION
 	if description == "" do new_desc = DEFAULT_DESC
 
-	deps := []Dependencies{
-		{dependencies = make(map[string]string, 0, context.temp_allocator)},
+	plain_dep := make(map[string]Dependency, 1, context.temp_allocator)
+
+	deps := []Dependencies{{name = "dep1", dep = {url = "url1", version = "0.1"}}}
+
+	// Build our plain_dep array to just fill in the data for now
+	for dep in deps {
+		plain_dep[dep.name] = dep.dep
 	}
 
 	project := Project {
@@ -280,7 +291,7 @@ project_create :: proc(name, type, author, version, description: string) -> (
 		author       = new_author,
 		version      = new_version,
 		description  = new_desc,
-		dependencies = deps,
+		dependencies = plain_dep,
 	}
 
 
