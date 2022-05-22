@@ -11,18 +11,26 @@ DEFAULT_AUTHOR :: "TODO: PROJECT AUTHOR"
 DEFAULT_VERSION :: "TODO: PROJECT VERSION"
 DEFAULT_DESC :: "TODO: PROJECT DESCRIPTION"
 
+Dependencies :: struct {
+	dependencies: map[string]string,
+}
+
 Project :: struct {
 	name:         string,
 	type:         string,
 	author:       string,
 	version:      string,
 	description:  string,
-	dependencies: map[string]string,
+	dependencies: []Dependencies,
 }
 
+Collections :: struct {
+	name: string,
+	path: string,
+}
 
 Odin_Lang_Server :: struct {
-	collections:             []map[string]string,
+	collections:             []Collections,
 	thread_pool_count:       i32,
 	enable_snippets:         bool,
 	enable_document_symbols: bool,
@@ -34,21 +42,21 @@ Odin_Lang_Server :: struct {
 @(private)
 project_create_ols_json :: proc() -> bool {
 
-	default_collections := make(map[string]string, 1024, context.temp_allocator)
 	current_dir := os.get_current_directory()
+
+	default_collections := []Collections{
+		{name = "core", path = "path t odin core"},
+		{name = "shared", path = fmt.tprintf("%s/src", current_dir)},
+	}
+
 	defer delete(current_dir)
 
 	shared_dir := fmt.tprintf("%s%s", current_dir, "/src")
 
 	pkg_dir := fmt.tprintf("%s%s", current_dir, "/pkg")
 
-	default_collections["core"] = "TODO: SET TO FULL PATH WHERE ODIN IS LOCATED"
-	default_collections["shared"] = shared_dir
-	default_collections["pkg"] = pkg_dir
-
-
 	lang_server_default := Odin_Lang_Server {
-		collections = {default_collections},
+		collections = default_collections,
 	}
 
 	parsed, _ := json.marshal(lang_server_default, context.temp_allocator)
@@ -249,14 +257,7 @@ project_create_dirs :: proc(self: Project) -> bool {
 }
 
 // Create our project
-project_create :: proc(
-	name,
-	type,
-	author,
-	version,
-	description: string,
-	dependencies: map[string]string,
-) -> (
+project_create :: proc(name, type, author, version, description: string) -> (
 	Project,
 	bool,
 ) {
@@ -269,16 +270,19 @@ project_create :: proc(
 	if version == "" do new_version = DEFAULT_VERSION
 	if description == "" do new_desc = DEFAULT_DESC
 
+	deps := []Dependencies{
+		{dependencies = make(map[string]string, 0, context.temp_allocator)},
+	}
+
 	project := Project {
 		name         = name,
 		type         = type,
 		author       = new_author,
 		version      = new_version,
 		description  = new_desc,
-		dependencies = dependencies,
+		dependencies = deps,
 	}
 
-	defer delete(dependencies)
 
 	result := project_create_dirs(project)
 
