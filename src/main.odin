@@ -24,21 +24,13 @@ Project_Data :: struct {
 }
 
 // Create our .build directory which will contain specific artifacts
-make_hidden_build :: proc(project: Project_Data) -> (ok: bool) {
+make_hidden_build :: proc() -> (ok: bool) {
+	/*
 	if err := os.make_directory(".build"); err != os.ERROR_NONE {
 		return false
 	}
 
-	type := Project_Type.Exe
-
-	if project.type == .Lib {
-		type = Project_Type.Exe
-	}
-
 	new_project_json := Project_Data {
-		name           = project.name,
-		author         = project.author,
-		version        = project.version,
 		artifacts_made = true,
 	}
 
@@ -47,6 +39,7 @@ make_hidden_build :: proc(project: Project_Data) -> (ok: bool) {
 	os.remove("project.json") or_return
 
 	os.write_entire_file("project.json", result)
+    */
 
 	return true
 }
@@ -181,23 +174,12 @@ get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
 
 	name, type, author, version: string
 	artifacts_made: bool
-	dep: map[string]map[string]string
-	defer delete(dep)
 
 	name = json_data["name"].(json.String) or_return
 	type = json_data["type"].(json.String) or_return
 	author = json_data["author"].(json.String) or_return
 	version = json_data["version"].(json.String) or_return
 	artifacts_made = json_data["artifacts_made"].(json.Boolean) or_return
-	deps := json_data["dependencies"].(json.Object)
-
-	dep_array: [dynamic]jiraf.Dependencies
-
-	for k, v in deps {
-		for h, j in v.(json.Object) {
-			append_elem(&dep_array, jiraf.Dependencies{k, jiraf.Dependency{h, j.(json.String)}})
-		}
-	}
 
 	ty: Project_Type
 	switch type {
@@ -206,8 +188,9 @@ get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
 	case "lib":
 		ty = .Lib
 	case:
-		return
+		return {}, false
 	}
+
 
 	return {
 		name = name,
@@ -292,7 +275,7 @@ main :: proc() {
 		}
 
 		if !project_json.artifacts_made {
-			hidden_ok := make_hidden_build(project_json)
+			hidden_ok := make_hidden_build()
 
 			if !hidden_ok {
 				fmt.eprintln("Failed to create .build")

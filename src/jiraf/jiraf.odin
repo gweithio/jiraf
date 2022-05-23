@@ -273,7 +273,6 @@ project_create :: proc(name, type, author, version, description: string) -> (
 	Project,
 	bool,
 ) {
-	// TODO(ethan): figure out a better way to handle this
 	new_author := author
 	new_version := version
 	new_desc := description
