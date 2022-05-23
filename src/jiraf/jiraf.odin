@@ -31,9 +31,13 @@ Project :: struct {
 	artifacts_made: bool,
 }
 
+Collections :: struct {
+	name: string,
+	path: string,
+}
 
 Odin_Lang_Server :: struct {
-	collections:             []map[string]string,
+	collections:             []Collections,
 	thread_pool_count:       i32,
 	enable_snippets:         bool,
 	enable_document_symbols: bool,
@@ -45,21 +49,21 @@ Odin_Lang_Server :: struct {
 @(private)
 project_create_ols_json :: proc() -> bool {
 
-	default_collections := make(map[string]string, 1024, context.temp_allocator)
 	current_dir := os.get_current_directory()
+
+	default_collections := []Collections{
+		{name = "core", path = os.get_env("ODIN_PATH", context.temp_allocator)},
+		{name = "shared", path = fmt.tprintf("%s/src", current_dir)},
+	}
+
 	defer delete(current_dir)
 
 	shared_dir := fmt.tprintf("%s%s", current_dir, "/src")
 
 	pkg_dir := fmt.tprintf("%s%s", current_dir, "/pkg")
 
-	default_collections["core"] = "TODO: SET TO FULL PATH WHERE ODIN IS LOCATED"
-	default_collections["shared"] = shared_dir
-	default_collections["pkg"] = pkg_dir
-
-
 	lang_server_default := Odin_Lang_Server {
-		collections = {default_collections},
+		collections = default_collections,
 	}
 
 	parsed, _ := json.marshal(lang_server_default, context.temp_allocator)
@@ -260,14 +264,7 @@ project_create_dirs :: proc(self: Project) -> bool {
 }
 
 // Create our project
-project_create :: proc(
-	name,
-	type,
-	author,
-	version,
-	description: string,
-	artifacts_made := false,
-) -> (
+project_create :: proc(name, type, author, version, description: string) -> (
 	Project,
 	bool,
 ) {
@@ -280,7 +277,6 @@ project_create :: proc(
 	if version == "" do new_version = DEFAULT_VERSION
 	if description == "" do new_desc = DEFAULT_DESC
 
-	// temp_allocator no need to delete
 	plain_dep := make(map[string]Dependency, 1, context.temp_allocator)
 
 	deps := []Dependencies{{name = "dep1", dep = {url = "url1", version = "0.1"}}}
@@ -297,8 +293,9 @@ project_create :: proc(
 		version        = new_version,
 		description    = new_desc,
 		dependencies   = plain_dep,
-		artifacts_made = artifacts_made,
+		artifacts_made = false,
 	}
+
 
 	result := project_create_dirs(project)
 
