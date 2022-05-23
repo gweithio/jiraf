@@ -58,9 +58,9 @@ project_create_ols_json :: proc() -> bool {
 
 	default_collections := []Collections{
 		{name = "core", path = core_collection},
-    {name = "shared", path = fmt.tprintf("%s/src", current_dir)}
-    {name = "pkg", path = fmt.tprintf("%s%s", current_dir, "/pkg")}
-   }
+		{name = "shared", path = fmt.tprintf("%s/src", current_dir)},
+		{name = "pkg", path = fmt.tprintf("%s%s", current_dir, "/pkg")},
+	}
 
 	defer delete(current_dir)
 
