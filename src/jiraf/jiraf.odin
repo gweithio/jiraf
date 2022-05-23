@@ -51,8 +51,13 @@ project_create_ols_json :: proc() -> bool {
 
 	current_dir := os.get_current_directory()
 
+	core_collection := fmt.tprintf(
+		"%s/core",
+		os.get_env("ODIN_ROOT", context.temp_allocator),
+	)
+
 	default_collections := []Collections{
-		{name = "core", path = os.get_env("ODIN_PATH", context.temp_allocator)},
+		{name = "core", path = core_collection},
 		{name = "shared", path = fmt.tprintf("%s/src", current_dir)},
 	}
 
