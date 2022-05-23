@@ -58,14 +58,11 @@ project_create_ols_json :: proc() -> bool {
 
 	default_collections := []Collections{
 		{name = "core", path = core_collection},
-		{name = "shared", path = fmt.tprintf("%s/src", current_dir)},
-	}
+    {name = "shared", path = fmt.tprintf("%s/src", current_dir)}
+    {name = "pkg", path = fmt.tprintf("%s%s", current_dir, "/pkg")}
+   }
 
 	defer delete(current_dir)
-
-	shared_dir := fmt.tprintf("%s%s", current_dir, "/src")
-
-	pkg_dir := fmt.tprintf("%s%s", current_dir, "/pkg")
 
 	lang_server_default := Odin_Lang_Server {
 		collections = default_collections,

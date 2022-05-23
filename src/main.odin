@@ -6,8 +6,11 @@ import "core:strings"
 import "shared:jiraf"
 import "core:encoding/json"
 import "core:c/libc"
+import "core:path/filepath"
+import "core:mem"
 
 import "pkg:args_parser/args_parser"
+
 
 // Possible project types
 Project_Type :: enum {
@@ -44,19 +47,25 @@ make_hidden_build :: proc() -> (ok: bool) {
 	return true
 }
 
+MEM_TRACK :: true
+
 // run the project by calling odin run
 run_project :: proc(project: Project_Data, args: []string) {
-	// Don't really need the command_builder
+	b := strings.make_builder(context.temp_allocator)
+	defer strings.destroy_builder(&b)
 
-	arg_string := ""
 	for arg in args {
-		arg_string = strings.concatenate([]string{arg, " "})
+		strings.write_string(&b, arg)
+		strings.write_string(&b, " ")
 	}
+
+	arg_string := strings.to_string(b)
 
 	shared_location := "src"
 	if project.type == Project_Type.Lib {
 		shared_location = "."
 	}
+
 
 	run_command := fmt.tprintf(
 		"odin run src/main.odin -file -out:%s %s -collection:shared=%s -collection:pkg=pkg",
@@ -65,7 +74,10 @@ run_project :: proc(project: Project_Data, args: []string) {
 		shared_location,
 	)
 
-	fmt.println(strings.concatenate([]string{"Running ", project.name, "..."}))
+	fmt.println(strings.concatenate(
+			[]string{"Running ", project.name, "..."},
+			context.temp_allocator,
+		))
 	cmd := strings.clone_to_cstring(run_command, context.temp_allocator)
 	libc.system(cmd)
 }
@@ -73,10 +85,15 @@ run_project :: proc(project: Project_Data, args: []string) {
 // build the project by calling odin build
 build_project :: proc(project: Project_Data, args: []string) {
 
-	arg_string := ""
+	b := strings.make_builder(context.temp_allocator)
+	defer strings.destroy_builder(&b)
+
 	for arg in args {
-		arg_string = strings.concatenate([]string{arg, " "}, context.temp_allocator)
+		strings.write_string(&b, arg)
+		strings.write_string(&b, " ")
 	}
+
+	arg_string := strings.to_string(b)
 
 	shared_location := "src"
 	if project.type == Project_Type.Lib {
@@ -99,10 +116,16 @@ build_project :: proc(project: Project_Data, args: []string) {
 // Run tests by calling odin test
 run_tests :: proc(project: Project_Data, args: []string) {
 
-	arg_string := ""
-	for arg, i in args {
-		arg_string = strings.concatenate([]string{arg, " "})
+	b := strings.make_builder(context.temp_allocator)
+	defer strings.destroy_builder(&b)
+
+	for arg in args {
+		strings.write_string(&b, arg)
+		strings.write_string(&b, " ")
 	}
+
+	arg_string := strings.to_string(b)
+
 
 	shared_location := "src"
 	if project.type == Project_Type.Lib {
@@ -138,7 +161,8 @@ get_dep :: proc(project: Project_Data, url: string) {
 	curr_dir := os.get_current_directory()
 	defer delete(curr_dir)
 
-	pkg_dir := fmt.tprintf("%s/pkg", curr_dir)
+	pkg_dir := filepath.join({curr_dir, "/pkg"}, context.temp_allocator)
+	defer delete(pkg_dir)
 
 	err := os.set_current_directory(pkg_dir)
 
@@ -154,10 +178,12 @@ get_dep :: proc(project: Project_Data, url: string) {
 
 // Check if the given parameter is a command
 is_a_command :: proc(cmd: string) -> bool {
-	if cmd == "run" || cmd == "test" || cmd == "build" || cmd == "get" || cmd == "version" {
+	switch cmd {
+	case "run", "test", "build", "get", "version":
 		return true
+	case:
+		return false
 	}
-	return false
 }
 
 get_project_from_json :: proc() -> (data: Project_Data, ok: bool) {
@@ -246,7 +272,7 @@ create_project :: proc(args: []string) -> bool {
 	return ok
 }
 
-main :: proc() {
+_main :: proc() {
 
 	args := os.args[1:]
 
@@ -291,7 +317,7 @@ main :: proc() {
 
 		switch (args[0]) {
 		case "version":
-			fmt.println("0.3.3")
+			fmt.println("0.3.5")
 		case "run":
 			run_project(project_json, args[1:])
 			return
@@ -315,4 +341,22 @@ main :: proc() {
 	} else {
 		return
 	}
+}
+
+main :: proc() {
+	when MEM_TRACK {
+		track: mem.Tracking_Allocator
+		mem.tracking_allocator_init(&track, context.allocator)
+		context.allocator = mem.tracking_allocator(&track)
+	}
+	_main()
+	when MEM_TRACK {
+		for _, leak in track.allocation_map {
+			fmt.printf("%v leaked %v bytes\n", leak.location, leak.size)
+		}
+		for bad_free in track.bad_free_array {
+			fmt.printf("%v allocation %p was freed badly\n", bad_free.location, bad_free.memory)
+		}
+	}
+
 }

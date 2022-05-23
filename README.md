@@ -13,6 +13,15 @@ Jiraf is a minimal build tool that makes it easy to run, compile and test Odin p
 
 See [article on Jiraf](https://www.epmor.app/posts/introducing-jiraf) for some background information
 
+## Building Jiraf
+First clone the repo with submodules as dependencies are carried out this way until `jiraf get` becomes more functional.
+
+```bash
+$ git clone --recurse-submodules https://github.com/gweithio/jiraf
+```
+
+If you already have Jiraf installed. you can simply do `jiraf build` or use the makefile and type `make` in the parent directory
+
 ## Usage
 
 ## Minimum Commands
@@ -44,9 +53,6 @@ $ jiraf get https://github.com/gweithio/arrays # The arrays package gets added t
 *NOTE*
 
 For `jiraf get` the import for the example is pkg:arrays/src/arrays which is dependent on project structure of the dep you've just added
-
-## Building Jiraf
-A Makefile is provided if you wish to build Jiraf, use `make build` and `make test` to run tests
 
 ## Warnings
 
