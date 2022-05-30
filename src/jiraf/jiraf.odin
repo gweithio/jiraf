@@ -95,6 +95,8 @@ project_create_dirs :: proc(self: Project) -> bool {
 	swap_dir := os.set_current_directory(self.name)
 	append(&results, swap_dir == os.ERROR_NONE)
 
+	// init git in the project repo
+	libc.system("git init")
 
 	// create a lib and return rather than a exe project
 	if self.type == "lib" {
@@ -118,7 +120,6 @@ project_create_dirs :: proc(self: Project) -> bool {
 		package_file := os.write_entire_file(
 			package_file_data,
 			transmute([]byte)package_odin_content,
-			true,
 		)
 
 		append(&results, package_file)
@@ -147,11 +148,7 @@ project_create_dirs :: proc(self: Project) -> bool {
 			context.temp_allocator,
 		)
 
-		test_file := os.write_entire_file(
-			test_file_data,
-			transmute([]byte)test_odin_content,
-			true,
-		)
+		test_file := os.write_entire_file(test_file_data, transmute([]byte)test_odin_content)
 
 		append(&results, test_file)
 
@@ -207,11 +204,7 @@ project_create_dirs :: proc(self: Project) -> bool {
 
 	append(&results, create_src_package_dir == os.ERROR_NONE)
 
-	main_file := os.write_entire_file(
-		"src/main.odin",
-		transmute([]byte)main_odin_content,
-		true,
-	)
+	main_file := os.write_entire_file("src/main.odin", transmute([]byte)main_odin_content)
 
 	append(&results, main_file)
 
@@ -223,7 +216,6 @@ project_create_dirs :: proc(self: Project) -> bool {
 	package_file := os.write_entire_file(
 		package_file_data,
 		transmute([]byte)package_odin_content,
-		true,
 	)
 
 	append(&results, package_file)
