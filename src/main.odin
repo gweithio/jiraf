@@ -162,10 +162,8 @@ get_dep :: proc(project: Project_Data, url: string) {
 	defer delete(curr_dir)
 
 	pkg_dir := filepath.join({curr_dir, "/pkg"}, context.temp_allocator)
-	defer delete(pkg_dir)
 
 	err := os.set_current_directory(pkg_dir)
-
 	if err != os.ERROR_NONE {
 		fmt.eprintln("Failed to swap to pkg directory")
 		return
@@ -174,6 +172,23 @@ get_dep :: proc(project: Project_Data, url: string) {
 	get_command := fmt.tprintf("git clone %s", url)
 	cmd := strings.clone_to_cstring(get_command, context.temp_allocator)
 	libc.system(cmd)
+
+	// parse the url to get dep name
+	dep_path_index := strings.last_index(url, "/")
+	dep_path := url[dep_path_index + 1:]
+
+	new_dir := os.set_current_directory(
+		strings.concatenate({curr_dir, "/pkg/", dep_path}, context.temp_allocator),
+	)
+
+	if new_dir != os.ERROR_NONE {
+		fmt.eprintln("Failed to set directory to dep directory")
+		return
+	}
+
+	// TODO(ethan): Remove the .git dir, once os.remove_directory is available swap to that
+	libc.system(strings.clone_to_cstring("rm -rf .git", context.temp_allocator))
+
 }
 
 // Check if the given parameter is a command
@@ -300,9 +315,8 @@ _main :: proc() {
 			return
 		}
 
-		if !project_json.artifacts_made {
+		if !project_json.artifacts_made && !os.exists(".build") {
 			hidden_ok := make_hidden_build()
-
 			if !hidden_ok {
 				fmt.eprintln("Failed to create .build")
 				return

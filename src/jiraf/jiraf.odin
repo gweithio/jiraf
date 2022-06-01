@@ -219,7 +219,6 @@ project_create_dirs :: proc(self: Project) -> bool {
 	)
 
 	append(&results, package_file)
-
 	create_tests_dir := os.make_directory("tests")
 
 	append(&results, create_tests_dir == os.ERROR_NONE)
